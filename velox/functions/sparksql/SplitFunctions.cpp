@@ -22,6 +22,7 @@
 namespace facebook::velox::functions::sparksql {
 namespace {
 
+<<<<<<< HEAD
 /// This class only implements the basic split version in which the pattern is a
 /// single character
 class SplitCharacter final : public exec::VectorFunction {
@@ -100,15 +101,19 @@ class Split final : public exec::VectorFunction {
     splitCharacter.apply(rows, args, nullptr, context, result);
   }
 };
+=======
+
+>>>>>>> 926087b9d... add ut
 
 /// The function returns specialized version of split based on the constant
 /// inputs.
 /// \param inputArgs the inputs types (VARCHAR, VARCHAR, int64) and constant
 ///     values (if provided).
 std::shared_ptr<exec::VectorFunction> createSplit(
-    const std::string& /*name*/,
+    const std::string& name,
     const std::vector<exec::VectorFunctionArg>& inputArgs,
     const core::QueryConfig& /*config*/) {
+<<<<<<< HEAD
   BaseVector* constantPattern = inputArgs[1].constantValue.get();
 
   if (inputArgs.size() > 3 || inputArgs[0].type->isVarchar() ||
@@ -123,6 +128,9 @@ std::shared_ptr<exec::VectorFunction> createSplit(
   // TODO: Add support for zero-length pattern, 2-character pattern
   // TODO: add support for general regex pattern using R2
   return std::make_shared<SplitCharacter>(charPattern);
+=======
+  return makeRe2SplitAll(name, inputArgs);
+>>>>>>> 926087b9d... add ut
 }
 
 std::vector<std::shared_ptr<exec::FunctionSignature>> signatures() {
