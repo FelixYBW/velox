@@ -1177,32 +1177,32 @@ TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
 TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
   testRe2SplitAll(
     // split('中国北京velox测试', '北京')
-    {"\\u4e2d\\u56fd\\u5317\\u4eac\\u0076\\u0065\\u006c\\u006f\\u0078\\u6d4b\\u8bd5"},
-    {"\\u5317\\u4eac"},
-    {{{"\\u4e2d\\u56fd", "\\u0076\\u0065\\u006c\\u006f\\u0078\\u6d4b\\u8bd5"}}});
+    {"\u4e2d\u56fd\u5317\u4eac\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
+    {"\u5317\u4eac"},
+    {{{"\u4e2d\u56fd", "\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"}}});
 
   testRe2SplitAll(
       // split('中国北京velox测试', 'velox')
-      {"\\u4e2d\\u56fd\\u5317\\u4eac\\u0076\\u0065\\u006c\\u006f\\u0078\\u6d4b\\u8bd5"},
-      {"\\u0076\\u0065\\u006c\\u006f\\u0078"},
-      {{{"\\u4e2d\\u56fd\\u5317\\u4eac", "\\u6d4b\\u8bd5"}}});
+      {"\u4e2d\u56fd\u5317\u4eac\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
+      {"\u0076\u0065\u006c\u006f\u0078"},
+      {{{"\u4e2d\u56fd\u5317\u4eac", "\u6d4b\u8bd5"}}});
 
   testRe2SplitAll(
       // split('测试velox', 'velox')
-      {"\\u6d4b\\u8bd5\\u0076\\u0065\\u006c\\u006f\\u0078"},
+      {"\u6d4b\u8bd5\u0076\u0065\u006c\u006f\u0078"},
       {"velox"},
-      {{{"\\u6d4b\\u8bd5", ""}}});
+      {{{"\u6d4b\u8bd5", ""}}});
 
   testRe2SplitAll(
       // split('测试velox ', 'velox')
-      {"\\u6d4b\\u8bd5\\u0076\\u0065\\u006c\\u006f\\u0078\\u0020"},
+      {"\u6d4b\u8bd5\u0076\u0065\u006c\u006f\u0078\u0020"},
       {"velox"},
-      {{{"\\u6d4b\\u8bd5", " "}}});
+      {{{"\u6d4b\u8bd5", " "}}});
 
   testRe2SplitAll(
       // split('velox测试', '测试')
-      {"\\u0076\\u0065\\u006c\\u006f\\u0078\\u6d4b\\u8bd5"},
-      {"\\u6d4b\\u8bd5"},
+      {"\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
+      {"\u6d4b\u8bd5"},
       {{{"", "velox"}}});
 }
 

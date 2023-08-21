@@ -113,6 +113,7 @@ class Split final : public exec::VectorFunction {
 std::shared_ptr<exec::VectorFunction> createSplit(
     const std::string& name,
     const std::vector<exec::VectorFunctionArg>& inputArgs,
+<<<<<<< HEAD
     const core::QueryConfig& /*config*/) {
 <<<<<<< HEAD
   BaseVector* constantPattern = inputArgs[1].constantValue.get();
@@ -132,6 +133,10 @@ std::shared_ptr<exec::VectorFunction> createSplit(
 =======
   return makeRe2SplitAll(name, inputArgs);
 >>>>>>> 926087b9d... add ut
+=======
+    const core::QueryConfig& config) {
+  return makeRe2SplitAll(name, inputArgs, config);
+>>>>>>> 8c27409bf... fix
 }
 
 std::vector<std::shared_ptr<exec::FunctionSignature>> signatures() {
