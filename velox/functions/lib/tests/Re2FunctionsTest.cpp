@@ -1147,8 +1147,7 @@ TEST_F(Re2FunctionsTest, regexSpiltAllSequenceCharPattern) {
 TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
   const std::vector<std::optional<std::string>> inputs = {
       "  123a   2b   14m  ", "123a 2b     14m", "123a2b14m"};
-  const std::vector<std::optional<std::string>> constantPattern = {
-      "(\\d+)([a-z]+)"};
+  const std::string constantPattern& = "(\\d+)([a-z]+)";
   const std::vector<std::optional<std::vector<std::string>>> expectedOutputs = {
       {{"  ", "   ", "   ", "  "}},
       {{"", " ", "     ", ""}},
