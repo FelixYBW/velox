@@ -77,7 +77,7 @@ class Re2FunctionsTest : public test::FunctionBaseTest {
 
   void testRe2SplitAll(
       const std::vector<std::optional<std::string>>& inputs,
-      const std::vector<std::optional<std::string>>& patterns,
+      const std::string& pattern,
       const std::vector<std::optional<std::vector<std::string>>>& output);
 
   std::string generateString(
