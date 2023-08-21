@@ -135,11 +135,7 @@ std::shared_ptr<exec::VectorFunction> createSplit(
 
 std::vector<std::shared_ptr<exec::FunctionSignature>> signatures() {
   // varchar, varchar -> array(varchar)
-  return {exec::FunctionSignatureBuilder()
-              .returnType("array(varchar)")
-              .argumentType("varchar")
-              .constantArgumentType("varchar")
-              .build()};
+  return re2SplitAllSignatures();
 }
 
 } // namespace

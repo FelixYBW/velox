@@ -1094,7 +1094,7 @@ void Re2FunctionsTest::testRe2SplitAll(
       constantPattern = std::string(", '") + patterns[0].value() + "'";
     }
 
-    expression = std::string("re2_extract_all(c0, c1)");
+    expression = std::string("re2_split_all(c0, c1)");
     return evaluate<ArrayVector>(expression, makeRowVector({input, pattern}));
   }();
 
@@ -1117,36 +1117,36 @@ void Re2FunctionsTest::testRe2SplitAll(
 
 TEST_F(Re2FunctionsTest, regexSpiltAllSingleCharPattern) {
   // _
-  testRe2ExtractAll({"abc_ta"}, {"_"}, {{{"abc", "ta"}}});
-  testRe2ExtractAll({"_abc_ta_"}, {"_"}, {{{"","abc","ta",""}}});
-  testRe2ExtractAll({"abc_ta "}, {"_"}, {{{"abc","ta "}}});
-  testRe2ExtractAll({" abc_ta "}, {"_"}, {{{" abc","ta "}}});
+  testRe2SplitAll({"abc_ta"}, {"_"}, {{{"abc", "ta"}}});
+  testRe2SplitAll({"_abc_ta_"}, {"_"}, {{{"","abc","ta",""}}});
+  testRe2SplitAll({"abc_ta "}, {"_"}, {{{"abc","ta "}}});
+  testRe2SplitAll({" abc_ta "}, {"_"}, {{{" abc","ta "}}});
 
   // .
-  testRe2ExtractAll({"abc"}, {"."}, {{{"","","","",""}}});
-  testRe2ExtractAll({"abc "}, {"."}, {{{"","","","",""}}});
-  testRe2ExtractAll({" abc "}, {"."}, {{{"","","","","",""}}});
+  testRe2SplitAll({"abc"}, {"."}, {{{"","","","",""}}});
+  testRe2SplitAll({"abc "}, {"."}, {{{"","","","",""}}});
+  testRe2SplitAll({" abc "}, {"."}, {{{"","","","","",""}}});
 
   // \\.
-  testRe2ExtractAll({"abc"}, {"\\."}, {{{"abc"}}});
-  testRe2ExtractAll({"abc "}, {"\\."}, {{{"abc "}}});
-  testRe2ExtractAll({" abc "}, {"\\."}, {{{" abc "}}});
+  testRe2SplitAll({"abc"}, {"\\."}, {{{"abc"}}});
+  testRe2SplitAll({"abc "}, {"\\."}, {{{"abc "}}});
+  testRe2SplitAll({" abc "}, {"\\."}, {{{" abc "}}});
 
   // \\|
-  testRe2ExtractAll({"abt|sc"}, {"\\|"}, {{{"abt","sc"}}});
-  testRe2ExtractAll({"|abc| "}, {"\\|"}, {{{"","abc"," "}}});
-  testRe2ExtractAll({" |ab|c | "}, {"\\|"}, {{{" ","ab","c "," "}}});
+  testRe2SplitAll({"abt|sc"}, {"\\|"}, {{{"abt","sc"}}});
+  testRe2SplitAll({"|abc| "}, {"\\|"}, {{{"","abc"," "}}});
+  testRe2SplitAll({" |ab|c | "}, {"\\|"}, {{{" ","ab","c "," "}}});
 
-  testRe2ExtractAll({"abcdef"}, {""}, {{{"a","b","c","d","e","f",""}}});
+  testRe2SplitAll({"abcdef"}, {""}, {{{"a","b","c","d","e","f",""}}});
 }
 
 TEST_F(Re2FunctionsTest, regexSpiltAllSequenceCharPattern) {
-  testRe2ExtractAll({"dafefaatb"}, {"fe"}, {{{"da","faatb"}}});
-  testRe2ExtractAll({"abc_ta"}, {"abc_ta_t"}, {{{"abc_ta"}}});
-  testRe2ExtractAll({"abc dt dat"}, {" dt"}, {{{"abc"," dat"}}});
+  testRe2SplitAll({"dafefaatb"}, {"fe"}, {{{"da","faatb"}}});
+  testRe2SplitAll({"abc_ta"}, {"abc_ta_t"}, {{{"abc_ta"}}});
+  testRe2SplitAll({"abc dt dat"}, {" dt"}, {{{"abc"," dat"}}});
 
-  testRe2ExtractAll({"absdfghabiefjab"}, {"ab"}, {{{"","sdfgh","iefj",""}}});
-  testRe2ExtractAll({" absdfgha biefjab "}, {"ab"}, {{{" ","sdfgha biefj"," "}}});
+  testRe2SplitAll({"absdfghabiefjab"}, {"ab"}, {{{"","sdfgh","iefj",""}}});
+  testRe2SplitAll({" absdfgha biefjab "}, {"ab"}, {{{" ","sdfgha biefj"," "}}});
 }
 
 TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
@@ -1161,12 +1161,12 @@ TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
 
   testRe2SplitAll(inputs, constantPattern, expectedOutputs);
 
-  testRe2ExtractAll({"aa2bb3cc4"}, {"[1-9]+"}, {{{"aa", "bb", "cc", ""}}});
-  testRe2ExtractAll({""}, {"[0-9]+"}, {{{""}}});
-  testRe2ExtractAll({"abcde"}, {"[0-9]+"}, {{{"abcde"}}});
-  testRe2ExtractAll({"abcde"}, {"\\d+"}, {{{"abcde"}}});
-  testRe2ExtractAll({"23544"}, {"\\w+"}, {{{"",""}}});
-  testRe2ExtractAll({"(╯°□°)╯︵ ┻━┻"}, {"[0-9]+"}, {{{"(╯°□°)╯︵ ┻━┻"}}});
+  testRe2SplitAll({"aa2bb3cc4"}, {"[1-9]+"}, {{{"aa", "bb", "cc", ""}}});
+  testRe2SplitAll({""}, {"[0-9]+"}, {{{""}}});
+  testRe2SplitAll({"abcde"}, {"[0-9]+"}, {{{"abcde"}}});
+  testRe2SplitAll({"abcde"}, {"\\d+"}, {{{"abcde"}}});
+  testRe2SplitAll({"23544"}, {"\\w+"}, {{{"",""}}});
+  testRe2SplitAll({"(╯°□°)╯︵ ┻━┻"}, {"[0-9]+"}, {{{"(╯°□°)╯︵ ┻━┻"}}});
 }
 
 TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
