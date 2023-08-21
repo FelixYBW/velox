@@ -145,7 +145,8 @@ std::vector<std::shared_ptr<exec::FunctionSignature>> re2ExtractAllSignatures();
 /// If the pattern does not match, returns original string as array.
 std::shared_ptr<exec::VectorFunction> makeRe2SplitAll(
     const std::string& name,
-    const std::vector<exec::VectorFunctionArg>& inputArgs);
+    const std::vector<exec::VectorFunctionArg>& inputArgs,
+    const core::QueryConfig& config);
 
 std::vector<std::shared_ptr<exec::FunctionSignature>> re2SplitAllSignatures();
 

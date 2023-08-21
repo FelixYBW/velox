@@ -1287,4 +1287,52 @@ re2ExtractAllSignatures() {
   };
 }
 
+std::shared_ptr<VectorFunction> makeRe2SplitAll(
+    const std::string& name,
+    const std::vector<VectorFunctionArg>& inputArgs,
+    const core::QueryConfig& /*config*/) {
+  auto numArgs = inputArgs.size();
+  VELOX_USER_CHECK(
+      numArgs == 2,
+      "{} requires 2 arguments, but got {}",
+      name,
+      numArgs);
+
+  VELOX_USER_CHECK(
+      inputArgs[0].type->isVarchar(),
+      "{} requires first argument of type VARCHAR, but got {}",
+      name,
+      inputArgs[0].type->toString());
+
+  VELOX_USER_CHECK(
+      inputArgs[1].type->isVarchar(),
+      "{} requires second argument of type VARCHAR, but got {}",
+      name,
+      inputArgs[1].type->toString());
+
+  BaseVector* constantPattern = inputArgs[1].constantValue.get();
+  VELOX_USER_CHECK(
+      constantPattern != nullptr && !constantPattern->isNullAt(0),
+      "{} requires second argument of constant, but got {}",
+      name,
+      inputArgs[1].type->toString());
+
+    auto pattern =
+        constantPattern->as<ConstantVector<StringView>>()->valueAt(0);
+
+    return std::make_shared<Re2SplitAllConstantPattern>(pattern);
+}
+
+std::vector<std::shared_ptr<exec::FunctionSignature>>
+re2SplitAllSignatures() {
+  // varchar, varchar -> array<varchar>
+  return {
+      exec::FunctionSignatureBuilder()
+          .returnType("array(varchar)")
+          .argumentType("varchar")
+          .constantArgumentType("varchar")
+          .build(),
+  };
+}
+
 } // namespace facebook::velox::functions
