@@ -16,9 +16,9 @@
 
 #include <utility>
 
-#include "velox/functions/lib/Re2Functions.h"
 #include "velox/expression/VectorFunction.h"
 #include "velox/expression/VectorWriters.h"
+#include "velox/functions/lib/Re2Functions.h"
 
 namespace facebook::velox::functions::sparksql {
 namespace {
