@@ -1075,9 +1075,8 @@ TEST_F(Re2FunctionsTest, invalidEscapeChar) {
 
 void Re2FunctionsTest::testRe2SplitAll(
     const std::vector<std::optional<std::string>>& inputs,
-    const std::vector<std::optional<std::string>>& patterns,
+    const std::string& patterns,
     const std::vector<std::optional<std::vector<std::string>>>& output) {
-  std::string constantPattern = "";
   std::string expression = "";
 
   auto result = [&] {
@@ -1094,12 +1093,11 @@ void Re2FunctionsTest::testRe2SplitAll(
           return patterns[row] ? StringView(*patterns[row]) : StringView();
         },
         [&patterns](vector_size_t row) { return !patterns[row].has_value(); });
-    if (patterns.size() == 1) {
-      // Constant pattern
-      constantPattern = std::string(", '") + patterns[0].value() + "'";
-    }
 
-    expression = std::string("re2_split_all(c0, c1)");
+    // Constant pattern
+    std::string constantPattern = std::string(", '") + patterns[0].value() + "'";
+    
+    expression = std::string("re2_split_all(c0") + constantPattern + ")";
     return evaluate<ArrayVector>(expression, makeRowVector({input, pattern}));
   }();
 
