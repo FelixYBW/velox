@@ -831,15 +831,11 @@ void re2SplitAll(
   const re2::StringPiece input = toStringPiece(str);
   size_t pos = 0;
 
-  while (re.Match(
-      input, pos, input.size(), RE2::UNANCHORED, groups.data(), 1)) {
+  while (
+      re.Match(input, pos, input.size(), RE2::UNANCHORED, groups.data(), 1)) {
     const re2::StringPiece fullMatch = groups[0];
     const re2::StringPiece subMatch =
         input.substr(pos, fullMatch.data() - input.data() - pos);
-    LOG(ERROR) << "ggtest: input: " << input.data()
-               << ", pos : " << pos
-               << ", fullMatch : " << fullMatch.ToString()
-               << ", subMatch : " << subMatch.ToString();
 
     arrayWriter.add_item().setNoCopy(
         StringView(subMatch.data(), subMatch.size()));
@@ -1293,10 +1289,7 @@ std::shared_ptr<VectorFunction> makeRe2SplitAll(
     const core::QueryConfig& /*config*/) {
   auto numArgs = inputArgs.size();
   VELOX_USER_CHECK(
-      numArgs == 2,
-      "{} requires 2 arguments, but got {}",
-      name,
-      numArgs);
+      numArgs == 2, "{} requires 2 arguments, but got {}", name, numArgs);
 
   VELOX_USER_CHECK(
       inputArgs[0].type->isVarchar(),
@@ -1317,14 +1310,12 @@ std::shared_ptr<VectorFunction> makeRe2SplitAll(
       name,
       inputArgs[1].type->toString());
 
-    auto pattern =
-        constantPattern->as<ConstantVector<StringView>>()->valueAt(0);
+  auto pattern = constantPattern->as<ConstantVector<StringView>>()->valueAt(0);
 
-    return std::make_shared<Re2SplitAllConstantPattern>(pattern);
+  return std::make_shared<Re2SplitAllConstantPattern>(pattern);
 }
 
-std::vector<std::shared_ptr<exec::FunctionSignature>>
-re2SplitAllSignatures() {
+std::vector<std::shared_ptr<exec::FunctionSignature>> re2SplitAllSignatures() {
   // varchar, varchar -> array<varchar>
   return {
       exec::FunctionSignatureBuilder()

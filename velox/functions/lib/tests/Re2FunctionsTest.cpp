@@ -1077,8 +1077,6 @@ void Re2FunctionsTest::testRe2SplitAll(
     const std::vector<std::optional<std::string>>& inputs,
     const std::string& pattern,
     const std::vector<std::optional<std::vector<std::string>>>& output) {
-  std::string expression = "";
-
   auto result = [&] {
     auto input = makeFlatVector<StringView>(
         inputs.size(),
@@ -1089,8 +1087,8 @@ void Re2FunctionsTest::testRe2SplitAll(
 
     // Constant pattern
     std::string constantPattern = std::string(", '") + pattern + "'";
-    
-    expression = std::string("re2_split_all(c0") + constantPattern + ")";
+    std::string expression = 
+        std::string("re2_split_all(c0") + constantPattern + ")";
     return evaluate<ArrayVector>(expression, makeRowVector({input}));
   }();
 
@@ -1142,7 +1140,8 @@ TEST_F(Re2FunctionsTest, regexSpiltAllSequenceCharPattern) {
   testRe2SplitAll({"abc dt dat"}, {" dt"}, {{{"abc", " dat"}}});
 
   testRe2SplitAll({"absdfghabiefjab"}, {"ab"}, {{{"", "sdfgh", "iefj", ""}}});
-  testRe2SplitAll({" absdfgha biefjab "}, {"ab"}, {{{" ", "sdfgha biefj", " "}}});
+  testRe2SplitAll(
+      {" absdfgha biefjab "}, {"ab"}, {{{" ", "sdfgha biefj", " "}}});
 }
 
 TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
