@@ -16,6 +16,7 @@
 
 #include <utility>
 
+#include "velox/functions/lib/Re2Functions.h"
 #include "velox/expression/VectorFunction.h"
 #include "velox/expression/VectorWriters.h"
 

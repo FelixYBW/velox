@@ -75,7 +75,7 @@ class Re2FunctionsTest : public test::FunctionBaseTest {
       const std::vector<std::optional<T>>& groupIds,
       const std::vector<std::optional<std::vector<std::string>>>& output);
 
-  void Re2FunctionsTest::testRe2SplitAll(
+  void testRe2SplitAll(
       const std::vector<std::optional<std::string>>& inputs,
       const std::vector<std::optional<std::string>>& patterns,
       const std::vector<std::optional<std::vector<std::string>>>& output);
