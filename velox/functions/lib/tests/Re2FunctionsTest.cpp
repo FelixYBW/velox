@@ -1087,7 +1087,7 @@ void Re2FunctionsTest::testRe2SplitAll(
 
     // Constant pattern
     std::string constantPattern = std::string(", '") + pattern + "'";
-    std::string expression = 
+    std::string expression =
         std::string("re2_split_all(c0") + constantPattern + ")";
     return evaluate<ArrayVector>(expression, makeRowVector({input}));
   }();
