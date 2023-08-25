@@ -1163,16 +1163,16 @@ TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
 
 TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
   testRe2SplitAll(
-      // split('中国北京velox测试', '北京')
-      {"\u4e2d\u56fd\u5317\u4eac\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
-      {"\u5317\u4eac"},
-      {{{"\u4e2d\u56fd", "\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"}}});
+      // split('苹果香蕉velox橘子', '香蕉')
+      {"\u82f9\u679c\u9999\u8549\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"},
+      {"\u9999\u8549"},
+      {{{"\u82f9\u679c", "\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"}}});
 
   testRe2SplitAll(
-      // split('中国北京velox测试', 'velox')
-      {"\u4e2d\u56fd\u5317\u4eac\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
+      // split('苹果香蕉velox橘子', 'velox')
+      {"\u82f9\u679c\u9999\u8549\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"},
       {"\u0076\u0065\u006c\u006f\u0078"},
-      {{{"\u4e2d\u56fd\u5317\u4eac", "\u6d4b\u8bd5"}}});
+      {{{"\u82f9\u679c\u9999\u8549", "\u6a58\u5b50"}}});
 
   testRe2SplitAll(
       // split('测试velox', 'velox')
@@ -1191,6 +1191,18 @@ TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
       {"\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
       {"\u6d4b\u8bd5"},
       {{{"velox", ""}}});
+    
+    testRe2SplitAll(
+      // split('苹果香蕉velox橘子 ', 'velox')
+      {"苹果香蕉velox橘子 "},
+      {"velox"},
+      {{{"苹果香蕉", "橘子 "}}});
+
+      testRe2SplitAll(
+      // split('苹果香蕉velox橘子 ', '橘子')
+      {"苹果香蕉velox橘子 "},
+      {"velox"},
+      {{{"苹果香蕉velox", " "}}});
 }
 
 } // namespace
