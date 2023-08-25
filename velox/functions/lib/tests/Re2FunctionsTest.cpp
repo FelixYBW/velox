@@ -1191,14 +1191,14 @@ TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
       {"\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
       {"\u6d4b\u8bd5"},
       {{{"velox", ""}}});
-    
-    testRe2SplitAll(
+
+  testRe2SplitAll(
       // split('苹果香蕉velox橘子 ', 'velox')
       {"苹果香蕉velox橘子 "},
       {"velox"},
       {{{"苹果香蕉", "橘子 "}}});
 
-      testRe2SplitAll(
+  testRe2SplitAll(
       // split('苹果香蕉velox橘子 ', '橘子')
       {"苹果香蕉velox橘子 "},
       {"velox"},
