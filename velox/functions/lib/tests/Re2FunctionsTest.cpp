@@ -1201,7 +1201,7 @@ TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
   testRe2SplitAll(
       // split('苹果香蕉velox橘子 ', '橘子')
       {"苹果香蕉velox橘子 "},
-      {"velox"},
+      {"橘子"},
       {{{"苹果香蕉velox", " "}}});
 }
 
