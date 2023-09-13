@@ -31,7 +31,6 @@ add_library(
   RegisterArithmetic.cpp
   RegisterCompare.cpp
   Size.cpp
-  SplitFunctions.cpp
   String.cpp)
 
 # GCC 12 has a bug where it does not respect "pragma ignore" directives and ends

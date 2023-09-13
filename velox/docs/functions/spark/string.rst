@@ -155,20 +155,19 @@ Unless specified otherwise, all functions return NULL if at least one of the arg
 
 .. spark:function:: split(string, delimiter) -> array(string)
 
-    Splits ``string`` on ``delimiter`` and returns an array. ::
+    Splits ``string`` on ``delimiter`` as much as possible and returns an array. 
+    ``string`` is constant and ``delimiter`` support regex expression by re2.
+    Notice:
+        There are some semantic diff between Java regex and re2 regex. Here are
+        some alreay known diff:
+        Positive Lookahead: (?=regex)
+        Negative Lookahead: (?!regex)
+        Positive Lookbehind: （?<=regex）
+        Negative Lookbehind:（?<!regex）::
 
         SELECT split('oneAtwoBthreeC', '[ABC]'); -- ["one","two","three",""]
         SELECT split('one', ''); -- ["o", "n", "e", ""]
         SELECT split('one', '1'); -- ["one"]
-
-.. spark:function:: split(string, delimiter, limit) -> array(string)
-   :noindex:
-
-    Splits ``string`` on ``delimiter`` and returns an array of size at most ``limit``. ::
-
-        SELECT split('oneAtwoBthreeC', '[ABC]', -1); -- ["one","two","three",""]
-        SELECT split('oneAtwoBthreeC', '[ABC]', 0); -- ["one", "two", "three", ""]
-        SELECT split('oneAtwoBthreeC', '[ABC]', 2); -- ["one","twoBthreeC"]
 
 .. spark:function:: startswith(left, right) -> boolean
 
