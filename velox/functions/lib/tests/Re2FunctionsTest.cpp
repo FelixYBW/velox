@@ -1085,14 +1085,14 @@ void Re2FunctionsTest::testRe2SplitAll(
         },
         [&inputs](vector_size_t row) { return !inputs[row].has_value(); });
 
-    // Constant pattern
+    // Constant pattern.
     std::string constantPattern = std::string(", '") + pattern + "'";
     std::string expression =
         std::string("re2_split_all(c0") + constantPattern + ")";
     return evaluate<ArrayVector>(expression, makeRowVector({input}));
   }();
 
-  // Creating vectors for output string vectors
+  // Creating vectors for output string vectors.
   auto sizeAtOutput = [&output](vector_size_t row) {
     return output[row] ? output[row]->size() : 0;
   };
@@ -1105,7 +1105,7 @@ void Re2FunctionsTest::testRe2SplitAll(
   auto expectedResult = makeArrayVector<StringView>(
       output.size(), sizeAtOutput, valueAtOutput, nullAtOutput);
 
-  // Checking the results
+  // Checking the results.
   assertEqualVectors(expectedResult, result);
 }
 
@@ -1163,46 +1163,33 @@ TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
 
 TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
   testRe2SplitAll(
-      // split('苹果香蕉velox橘子', '香蕉')
       {"\u82f9\u679c\u9999\u8549\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"},
       {"\u9999\u8549"},
       {{{"\u82f9\u679c", "\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"}}});
 
   testRe2SplitAll(
-      // split('苹果香蕉velox橘子', 'velox')
       {"\u82f9\u679c\u9999\u8549\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"},
       {"\u0076\u0065\u006c\u006f\u0078"},
       {{{"\u82f9\u679c\u9999\u8549", "\u6a58\u5b50"}}});
 
   testRe2SplitAll(
-      // split('测试velox', 'velox')
       {"\u6d4b\u8bd5\u0076\u0065\u006c\u006f\u0078"},
       {"velox"},
       {{{"\u6d4b\u8bd5", ""}}});
 
   testRe2SplitAll(
-      // split('测试velox ', 'velox')
       {"\u6d4b\u8bd5\u0076\u0065\u006c\u006f\u0078\u0020"},
       {"velox"},
       {{{"\u6d4b\u8bd5", " "}}});
 
   testRe2SplitAll(
-      // split('velox测试', '测试')
       {"\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
       {"\u6d4b\u8bd5"},
       {{{"velox", ""}}});
 
-  testRe2SplitAll(
-      // split('苹果香蕉velox橘子 ', 'velox')
-      {"苹果香蕉velox橘子 "},
-      {"velox"},
-      {{{"苹果香蕉", "橘子 "}}});
+  testRe2SplitAll({"苹果香蕉velox橘子 "}, {"velox"}, {{{"苹果香蕉", "橘子 "}}});
 
-  testRe2SplitAll(
-      // split('苹果香蕉velox橘子 ', '橘子')
-      {"苹果香蕉velox橘子 "},
-      {"橘子"},
-      {{{"苹果香蕉velox", " "}}});
+  testRe2SplitAll({"苹果香蕉velox橘子 "}, {"橘子"}, {{{"苹果香蕉velox", " "}}});
 }
 
 } // namespace

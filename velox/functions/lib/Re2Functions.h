@@ -137,9 +137,8 @@ std::vector<std::shared_ptr<exec::FunctionSignature>> re2ExtractAllSignatures();
 
 /// re2SplitAll(string, pattern) → array<string>
 ///
-/// If string has a substring that matches the given pattern, then will be split
-/// by pattern, returns All of the substrings that not matching the given
-/// pattern by array.
+/// Returns an array by splitting string as many times as possible.
+/// The pattern is any string matching regex.
 ///
 /// If the pattern is invalid or not constant, throws an exception.
 /// If the pattern does not match, returns original string as array.

@@ -849,8 +849,6 @@ void re2SplitAll(
     const re2::StringPiece remaining = input.substr(pos);
     arrayWriter.add_item().setNoCopy(
         StringView(remaining.data(), remaining.size()));
-  } else if (pos == input.size()) {
-    arrayWriter.add_item().setNoCopy(StringView(nullptr, 0));
   }
 
   resultWriter.commit();
@@ -1288,8 +1286,8 @@ std::shared_ptr<VectorFunction> makeRe2SplitAll(
     const std::vector<VectorFunctionArg>& inputArgs,
     const core::QueryConfig& /*config*/) {
   auto numArgs = inputArgs.size();
-  VELOX_USER_CHECK(
-      numArgs == 2, "{} requires 2 arguments, but got {}", name, numArgs);
+  VELOX_USER_CHECK_EQ(
+      numArgs, 2, "{} requires 2 arguments, but got {}", name, numArgs);
 
   VELOX_USER_CHECK(
       inputArgs[0].type->isVarchar(),
@@ -1311,6 +1309,19 @@ std::shared_ptr<VectorFunction> makeRe2SplitAll(
       inputArgs[1].type->toString());
 
   auto pattern = constantPattern->as<ConstantVector<StringView>>()->valueAt(0);
+
+  // void apply(
+  //     const SelectivityVector& rows,
+  //     std::vector<VectorPtr>& args,
+  //     const TypePtr& /* outputType */,
+  //     EvalCtx& context,
+  //     VectorPtr& resultRef) const final {
+  //   try {
+  //     checkForBadPattern(re_);
+  //   } catch (const std::exception& e) {
+  //     context.setErrors(rows, std::current_exception());
+  //     return;
+  //   }
 
   return std::make_shared<Re2SplitAllConstantPattern>(pattern);
 }
