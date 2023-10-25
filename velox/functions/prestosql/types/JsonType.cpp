@@ -614,6 +614,8 @@ simdjson::error_code appendMapKey(
   using T = typename TypeTraits<kind>::NativeType;
   if constexpr (std::is_same_v<T, void>) {
     return simdjson::INCORRECT_TYPE;
+  } else if constexpr (std::is_same_v<T, UnknownValue>) {
+    return simdjson::EMPTY;
   } else {
     SIMDJSON_ASSIGN_OR_RAISE(writer.castTo<T>(), fromString<T>(value));
     return simdjson::SUCCESS;

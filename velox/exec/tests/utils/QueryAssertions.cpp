@@ -441,6 +441,9 @@ std::vector<MaterializedRow> materialize(
         auto value = variant(::duckdb::Date::EpochDays(
             dataChunk->GetValue(j, i).GetValue<::duckdb::date_t>()));
         row.push_back(value);
+      } else if (typeKind == TypeKind::UNKNOWN) {
+        auto value = variant(TypeKind::UNKNOWN);
+        row.push_back(value);
       } else {
         auto value = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
             variantAt, typeKind, dataChunk, i, j);

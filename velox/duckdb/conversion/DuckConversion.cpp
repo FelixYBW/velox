@@ -61,6 +61,8 @@ LogicalType fromVeloxType(const TypePtr& type) {
   }
 
   switch (type->kind()) {
+    case TypeKind::UNKNOWN:
+      return LogicalType::SQLNULL;
     case TypeKind::BOOLEAN:
       return LogicalType::BOOLEAN;
     case TypeKind::TINYINT:
