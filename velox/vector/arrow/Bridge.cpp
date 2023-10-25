@@ -271,6 +271,8 @@ const char* exportArrowFormatStr(
       return "+m"; // map
     case TypeKind::ROW:
       return "+s"; // struct
+    case TypeKind::UNKNOWN:
+      return "n";
 
     default:
       VELOX_NYI("Unable to map type '{}' to ArrowSchema.", type->kind());
@@ -629,6 +631,7 @@ void exportFlat(
     case TypeKind::HUGEINT:
     case TypeKind::REAL:
     case TypeKind::DOUBLE:
+    case TypeKind::UNKNOWN:
     case TypeKind::TIMESTAMP:
       exportValues(vec, rows, options, out, pool, holder);
       break;

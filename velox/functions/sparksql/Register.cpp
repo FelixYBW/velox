@@ -191,6 +191,8 @@ void registerFunctions(const std::string& prefix) {
       prefix + "rlike", re2SearchSignatures(), makeRLike);
   registerRegexReplace(prefix);
   VELOX_REGISTER_VECTOR_FUNCTION(udf_regexp_split, prefix + "split");
+  exec::registerStatefulVectorFunction(
+      prefix + "split", re2SplitAllSignatures(), makeRe2SplitAll);
 
   exec::registerStatefulVectorFunction(
       prefix + "least", leastSignatures(), makeLeast);

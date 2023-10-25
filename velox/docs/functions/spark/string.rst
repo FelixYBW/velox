@@ -153,18 +153,30 @@ Unless specified otherwise, all functions return NULL if at least one of the arg
 
         SELECT rtrim('kr', 'spark'); -- "spa"
 
-.. spark:function:: split(string, delimiter) -> array(string)
+    Splits ``string`` on ``delimiter`` as much as possible and returns an array. 
+    ``string`` is constant and ``delimiter`` support regex expression by re2.
+    Notice:
+        There are some semantic diff between Java regex and re2 regex. Here are
+        some alreay known diff:
+        Positive Lookahead: (?=regex)
+        Negative Lookahead: (?!regex)
+        Positive Lookbehind: （?<=regex）
+        Negative Lookbehind:（?<!regex）::
+.. spark:function:: split(string, regex) -> array(string)
 
-    Splits ``string`` on ``delimiter`` and returns an array. ::
+    Returns an array by splitting ``string`` as many times as possible. 
+    The ``regex`` is any string matching regex, supported by re2.
+    This is equivalent to split(string, regex, -1), -1 is used for limit. ::
 
         SELECT split('oneAtwoBthreeC', '[ABC]'); -- ["one","two","three",""]
         SELECT split('one', ''); -- ["o", "n", "e", ""]
         SELECT split('one', '1'); -- ["one"]
 
-.. spark:function:: split(string, delimiter, limit) -> array(string)
+.. spark:function:: split(string, regex, limit) -> array(string)
    :noindex:
 
-    Splits ``string`` on ``delimiter`` and returns an array of size at most ``limit``. ::
+    Splits ``string`` on ``regex`` and returns an array of size at most ``limit``.
+    If limit is negative, ``string`` will be split as many times as possible. ::
 
         SELECT split('oneAtwoBthreeC', '[ABC]', -1); -- ["one","two","three",""]
         SELECT split('oneAtwoBthreeC', '[ABC]', 0); -- ["one", "two", "three", ""]
