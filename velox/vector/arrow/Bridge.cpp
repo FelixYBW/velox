@@ -259,6 +259,8 @@ const char* exportArrowFormatStr(
       return "+m"; // map
     case TypeKind::ROW:
       return "+s"; // struct
+    case TypeKind::UNKNOWN:
+      return "n";
 
     default:
       VELOX_NYI("Unable to map type '{}' to ArrowSchema.", type->kind());
@@ -586,6 +588,7 @@ void exportFlat(
     case TypeKind::HUGEINT:
     case TypeKind::REAL:
     case TypeKind::DOUBLE:
+    case TypeKind::UNKNOWN:
       exportValues(vec, rows, out, pool, holder);
       break;
     case TypeKind::TIMESTAMP:
@@ -1028,6 +1031,8 @@ TypePtr importFromArrow(const ArrowSchema& arrowSchema) {
       return REAL();
     case 'g':
       return DOUBLE();
+    case 'n':
+      return UNKNOWN();
 
     // Map both utf-8 and large utf-8 string to varchar.
     case 'u':
