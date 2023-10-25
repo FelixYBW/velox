@@ -1430,10 +1430,6 @@ std::shared_ptr<const OpaqueType> OPAQUE() {
         return TEMPLATE_FUNC<::facebook::velox::TypeKind::TIMESTAMP>(         \
             __VA_ARGS__);                                                     \
       }                                                                       \
-      case ::facebook::velox::TypeKind::UNKNOWN: {                            \
-        return TEMPLATE_FUNC<::facebook::velox::TypeKind::UNKNOWN>(           \
-            __VA_ARGS__);                                                     \
-      }                                                                       \
       default:                                                                \
         VELOX_FAIL(                                                           \
             "not a scalar type! kind: {}", mapTypeKindToName(typeKind));      \

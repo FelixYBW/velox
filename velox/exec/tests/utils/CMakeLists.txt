@@ -51,6 +51,7 @@ target_link_libraries(
   velox_presto_serializer
   velox_functions_prestosql
   velox_aggregates
+  duckdb_static
   cpr::cpr
   velox_type_parser
   Folly::folly)
