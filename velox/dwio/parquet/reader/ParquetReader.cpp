@@ -342,7 +342,21 @@ std::shared_ptr<const ParquetTypeWithId> ReaderBase::getParquetColumnInfo(
               std::nullopt,
               maxRepeat,
               maxDefine);
-        }
+        } else {
+          // Row type
+          auto childrenCopy = children;
+          return std::make_shared<const ParquetTypeWithId>(
+              createRowType(children, isFileColumnNamesReadAsLowerCase()),
+              std::move(childrenCopy),
+              curSchemaIdx,
+              maxSchemaElementIdx,
+              ParquetTypeWithId::kNonLeaf, // columnIdx,
+              std::move(name),
+              std::nullopt,
+	      std::nullopt,
+              maxRepeat,
+              maxDefine);
+	}
       } else {
         // Row type
         auto childrenCopy = children;
