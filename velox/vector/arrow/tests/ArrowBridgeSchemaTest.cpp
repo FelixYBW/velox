@@ -432,6 +432,7 @@ TEST_F(ArrowBridgeSchemaImportTest, complexTypes) {
 }
 
 TEST_F(ArrowBridgeSchemaImportTest, unsupported) {
+  // EXPECT_THROW(testSchemaImport("n"), VeloxUserError);
   EXPECT_THROW(testSchemaImport("C"), VeloxUserError);
   EXPECT_THROW(testSchemaImport("S"), VeloxUserError);
   EXPECT_THROW(testSchemaImport("I"), VeloxUserError);

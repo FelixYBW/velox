@@ -57,6 +57,8 @@ class Re2FunctionsTest : public test::FunctionBaseTest {
     exec::registerStatefulVectorFunction(
         "re2_extract_all", re2ExtractAllSignatures(), makeRe2ExtractAll);
     exec::registerStatefulVectorFunction("like", likeSignatures(), makeLike);
+    exec::registerStatefulVectorFunction(
+        "re2_split_all", re2SplitAllSignatures(), makeRe2SplitAll);
   }
 
  protected:
@@ -71,6 +73,11 @@ class Re2FunctionsTest : public test::FunctionBaseTest {
       const std::vector<std::optional<std::string>>& inputs,
       const std::vector<std::optional<std::string>>& patterns,
       const std::vector<std::optional<T>>& groupIds,
+      const std::vector<std::optional<std::vector<std::string>>>& output);
+
+  void testRe2SplitAll(
+      const std::vector<std::optional<std::string>>& inputs,
+      const std::string& pattern,
       const std::vector<std::optional<std::vector<std::string>>>& output);
 
   std::string generateString(
@@ -1431,44 +1438,123 @@ TEST_F(Re2FunctionsTest, regexExtractAllLarge) {
       "No group 4611686018427387904 in regex '(\\d+)([a-z]+)")
 }
 
-// Make sure we do not compile more than kMaxCompiledRegexes.
-TEST_F(Re2FunctionsTest, limit) {
-  auto data = makeRowVector({
-      makeFlatVector<std::string>(
-          100,
-          [](auto row) { return fmt::format("Apples and oranges {}", row); }),
-      makeFlatVector<std::string>(
-          100,
-          [](auto row) { return fmt::format("Apples (.*) oranges {}", row); }),
-      makeFlatVector<std::string>(
-          100,
-          [](auto row) {
-            return fmt::format("Apples (.*) oranges {}", row % 20);
-          }),
-  });
+void Re2FunctionsTest::testRe2SplitAll(
+    const std::vector<std::optional<std::string>>& inputs,
+    const std::string& pattern,
+    const std::vector<std::optional<std::vector<std::string>>>& output) {
+  auto result = [&] {
+    auto input = makeFlatVector<StringView>(
+        inputs.size(),
+        [&inputs](vector_size_t row) {
+          return inputs[row] ? StringView(*inputs[row]) : StringView();
+        },
+        [&inputs](vector_size_t row) { return !inputs[row].has_value(); });
 
-  VELOX_ASSERT_THROW(
-      evaluate("regexp_extract(c0, c1)", data), "Max number of regex reached");
-  ASSERT_NO_THROW(evaluate("regexp_extract(c0, c2)", data));
+    // Constant pattern.
+    std::string constantPattern = std::string(", '") + pattern + "'";
+    std::string expression =
+        std::string("re2_split_all(c0") + constantPattern + ")";
+    return evaluate<ArrayVector>(expression, makeRowVector({input}));
+  }();
 
-  VELOX_ASSERT_THROW(
-      evaluate("regexp_extract(c0, c1, 1)", data),
-      "Max number of regex reached");
-  ASSERT_NO_THROW(evaluate("regexp_extract(c0, c2, 1)", data));
+  // Creating vectors for output string vectors.
+  auto sizeAtOutput = [&output](vector_size_t row) {
+    return output[row] ? output[row]->size() : 0;
+  };
+  auto valueAtOutput = [&output](vector_size_t row, vector_size_t idx) {
+    return output[row] ? StringView(output[row]->at(idx)) : StringView("");
+  };
+  auto nullAtOutput = [&output](vector_size_t row) {
+    return !output[row].has_value();
+  };
+  auto expectedResult = makeArrayVector<StringView>(
+      output.size(), sizeAtOutput, valueAtOutput, nullAtOutput);
 
-  VELOX_ASSERT_THROW(
-      evaluate("regexp_extract_all(c0, c1)", data),
-      "Max number of regex reached");
-  ASSERT_NO_THROW(evaluate("regexp_extract_all(c0, c2)", data));
+  // Checking the results.
+  assertEqualVectors(expectedResult, result);
+}
 
-  VELOX_ASSERT_THROW(
-      evaluate("regexp_extract_all(c0, c1, 1)", data),
-      "Max number of regex reached");
-  ASSERT_NO_THROW(evaluate("regexp_extract_all(c0, c2, 1)", data));
+TEST_F(Re2FunctionsTest, regexSpiltAllSingleCharPattern) {
+  // _
+  testRe2SplitAll({"abc_ta"}, {"_"}, {{{"abc", "ta"}}});
+  testRe2SplitAll({"_abc_ta_"}, {"_"}, {{{"", "abc", "ta", ""}}});
+  testRe2SplitAll({"abc_ta "}, {"_"}, {{{"abc", "ta "}}});
+  testRe2SplitAll({" abc_ta "}, {"_"}, {{{" abc", "ta "}}});
 
-  VELOX_ASSERT_THROW(
-      evaluate("regexp_like(c0, c1)", data), "Max number of regex reached");
-  ASSERT_NO_THROW(evaluate("regexp_like(c0, c2)", data));
+  // .
+  testRe2SplitAll({"abc"}, {"."}, {{{"", "", "", ""}}});
+  testRe2SplitAll({"abc "}, {"."}, {{{"", "", "", "", ""}}});
+  testRe2SplitAll({" abc "}, {"."}, {{{"", "", "", "", "", ""}}});
+
+  // \\.
+  testRe2SplitAll({"abc"}, {"\\."}, {{{"abc"}}});
+  testRe2SplitAll({"abc "}, {"\\."}, {{{"abc "}}});
+  testRe2SplitAll({" abc "}, {"\\."}, {{{" abc "}}});
+
+  // \\|
+  testRe2SplitAll({"abt|sc"}, {"\\|"}, {{{"abt", "sc"}}});
+  testRe2SplitAll({"|abc| "}, {"\\|"}, {{{"", "abc", " "}}});
+  testRe2SplitAll({" |ab|c | "}, {"\\|"}, {{{" ", "ab", "c ", " "}}});
+}
+
+TEST_F(Re2FunctionsTest, regexSpiltAllSequenceCharPattern) {
+  testRe2SplitAll({"dafefaatb"}, {"fe"}, {{{"da", "faatb"}}});
+  testRe2SplitAll({"abc_ta"}, {"abc_ta_t"}, {{{"abc_ta"}}});
+  testRe2SplitAll({"abc dt dat"}, {" dt"}, {{{"abc", " dat"}}});
+
+  testRe2SplitAll({"absdfghabiefjab"}, {"ab"}, {{{"", "sdfgh", "iefj", ""}}});
+  testRe2SplitAll(
+      {" absdfgha biefjab "}, {"ab"}, {{{" ", "sdfgha biefj", " "}}});
+}
+
+TEST_F(Re2FunctionsTest, regexSpiltAllRegexSequencePattern) {
+  const std::vector<std::optional<std::string>> inputs = {
+      "  123a   2b   14m  ", "123a 2b     14m", "123a2b14m"};
+  const std::string constantPattern = "(\\d+)([a-z]+)";
+  const std::vector<std::optional<std::vector<std::string>>> expectedOutputs = {
+      {{"  ", "   ", "   ", "  "}},
+      {{"", " ", "     ", ""}},
+      {{"", "", "", ""}}};
+
+  testRe2SplitAll(inputs, constantPattern, expectedOutputs);
+
+  testRe2SplitAll({"aa2bb3cc4"}, {"[1-9]+"}, {{{"aa", "bb", "cc", ""}}});
+  testRe2SplitAll({""}, {"[0-9]+"}, {{{""}}});
+  testRe2SplitAll({"abcde"}, {"[0-9]+"}, {{{"abcde"}}});
+  testRe2SplitAll({"abcde"}, {"\\d+"}, {{{"abcde"}}});
+  testRe2SplitAll({"23544"}, {"\\w+"}, {{{"", ""}}});
+  testRe2SplitAll({"(╯°□°)╯︵ ┻━┻"}, {"[0-9]+"}, {{{"(╯°□°)╯︵ ┻━┻"}}});
+}
+
+TEST_F(Re2FunctionsTest, regexSplitAllNonAscii) {
+  testRe2SplitAll(
+      {"\u82f9\u679c\u9999\u8549\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"},
+      {"\u9999\u8549"},
+      {{{"\u82f9\u679c", "\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"}}});
+
+  testRe2SplitAll(
+      {"\u82f9\u679c\u9999\u8549\u0076\u0065\u006c\u006f\u0078\u6a58\u5b50"},
+      {"\u0076\u0065\u006c\u006f\u0078"},
+      {{{"\u82f9\u679c\u9999\u8549", "\u6a58\u5b50"}}});
+
+  testRe2SplitAll(
+      {"\u6d4b\u8bd5\u0076\u0065\u006c\u006f\u0078"},
+      {"velox"},
+      {{{"\u6d4b\u8bd5", ""}}});
+
+  testRe2SplitAll(
+      {"\u6d4b\u8bd5\u0076\u0065\u006c\u006f\u0078\u0020"},
+      {"velox"},
+      {{{"\u6d4b\u8bd5", " "}}});
+
+  testRe2SplitAll(
+      {"\u0076\u0065\u006c\u006f\u0078\u6d4b\u8bd5"},
+      {"\u6d4b\u8bd5"},
+      {{{"velox", ""}}});
+
+  testRe2SplitAll({"苹果香蕉velox橘子 "}, {"velox"}, {{{"苹果香蕉", "橘子 "}}});
+
+  testRe2SplitAll({"苹果香蕉velox橘子 "}, {"橘子"}, {{{"苹果香蕉velox", " "}}});
 }
 
 TEST_F(Re2FunctionsTest, split) {

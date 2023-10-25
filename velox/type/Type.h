@@ -126,6 +126,10 @@ struct UnknownValue {
   bool operator>=(const UnknownValue& /* b */) const {
     return true;
   }
+
+  operator std::string() const {
+    return "NULL";
+  }
 };
 
 template <typename T>
@@ -1442,6 +1446,10 @@ std::shared_ptr<const OpaqueType> OPAQUE() {
         return TEMPLATE_FUNC<::facebook::velox::TypeKind::TIMESTAMP>(         \
             __VA_ARGS__);                                                     \
       }                                                                       \
+      case ::facebook::velox::TypeKind::UNKNOWN: {                            \
+        return TEMPLATE_FUNC<::facebook::velox::TypeKind::UNKNOWN>(           \
+            __VA_ARGS__);                                                     \
+      }                                                                       \
       default:                                                                \
         VELOX_FAIL(                                                           \
             "not a scalar type! kind: {}", mapTypeKindToName(typeKind));      \
@@ -1574,8 +1582,15 @@ std::shared_ptr<const OpaqueType> OPAQUE() {
     }                                                                          \
   }()
 
-#define VELOX_DYNAMIC_TYPE_DISPATCH(TEMPLATE_FUNC, typeKind, ...) \
-  VELOX_DYNAMIC_TYPE_DISPATCH_IMPL(TEMPLATE_FUNC, , typeKind, __VA_ARGS__)
+#define VELOX_DYNAMIC_TYPE_DISPATCH(TEMPLATE_FUNC, typeKind, ...)              \
+  [&]() {                                                                      \
+    if ((typeKind) == ::facebook::velox::TypeKind::UNKNOWN) {                  \
+      return TEMPLATE_FUNC<::facebook::velox::TypeKind::UNKNOWN>(__VA_ARGS__); \
+    } else {                                                                   \
+      return VELOX_DYNAMIC_TYPE_DISPATCH_IMPL(                                 \
+          TEMPLATE_FUNC, , typeKind, __VA_ARGS__);                             \
+    }                                                                          \
+  }()
 
 #define VELOX_DYNAMIC_TYPE_DISPATCH_ALL(TEMPLATE_FUNC, typeKind, ...)          \
   [&]() {                                                                      \
@@ -1886,6 +1901,16 @@ void toAppend(
 void toTypeSql(const TypePtr& type, std::ostream& out);
 
 } // namespace facebook::velox
+
+namespace std {
+template <>
+struct hash<::facebook::velox::UnknownValue> {
+  size_t operator()(const ::facebook::velox::UnknownValue& /* value */) const {
+    return 0;
+  }
+};
+
+} // namespace std
 
 namespace folly {
 template <>
