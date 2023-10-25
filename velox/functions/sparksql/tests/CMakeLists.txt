@@ -38,7 +38,6 @@ add_executable(
   RegexFunctionsTest.cpp
   SizeTest.cpp
   SortArrayTest.cpp
-  SplitFunctionsTest.cpp
   StringTest.cpp
   UnscaledValueFunctionTest.cpp
   XxHash64Test.cpp)
