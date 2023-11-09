@@ -382,9 +382,9 @@ class ReaderOptions : public io::ReaderOptions {
   std::shared_ptr<folly::Executor> ioExecutor_;
 
  public:
-  static constexpr uint64_t kDefaultDirectorySizeGuess = 1024 * 1024; // 1MB
+  static constexpr uint64_t kDefaultDirectorySizeGuess = 32 * 1024; // 1MB
   static constexpr uint64_t kDefaultFilePreloadThreshold =
-      1024 * 1024 * 8; // 8MB
+      1024 * 1024 * 1; // 8MB
 
   explicit ReaderOptions(velox::memory::MemoryPool* pool)
       : io::ReaderOptions(pool),
