@@ -88,6 +88,8 @@ class ReaderBase {
       const RowTypePtr& rowTypePtr,
       bool fileColumnNamesReadAsLowerCase);
 
+  uint64_t fetchWaitTime = 0;
+
  private:
   // Reads and parses file footer.
   void loadFileMetaData();
@@ -310,8 +312,8 @@ std::shared_ptr<const ParquetTypeWithId> ReaderBase::getParquetColumnInfo(
     } else {
       if (schemaElement.repetition_type ==
           thrift::FieldRepetitionType::REPEATED) {
-        //VELOX_CHECK_LE(
-            //children.size(), 2, "children size should not be larger than 2");
+        // VELOX_CHECK_LE(
+        // children.size(), 2, "children size should not be larger than 2");
         if (children.size() == 1) {
           // child of LIST
           auto childrenCopy = children;
@@ -352,10 +354,10 @@ std::shared_ptr<const ParquetTypeWithId> ReaderBase::getParquetColumnInfo(
               ParquetTypeWithId::kNonLeaf, // columnIdx,
               std::move(name),
               std::nullopt,
-	      std::nullopt,
+              std::nullopt,
               maxRepeat,
               maxDefine);
-	}
+        }
       } else {
         // Row type
         auto childrenCopy = children;
@@ -613,17 +615,24 @@ void ReaderBase::scheduleRowGroups(
     const std::vector<uint32_t>& rowGroupIds,
     int32_t currentGroup,
     StructColumnReader& reader) {
+  uint64_t usec = 0;
   auto thisGroup = rowGroupIds[currentGroup];
   auto nextGroup =
       currentGroup + 1 < rowGroupIds.size() ? rowGroupIds[currentGroup + 1] : 0;
   auto input = inputs_[thisGroup].get();
   if (!input) {
-    inputs_[thisGroup] = reader.loadRowGroup(thisGroup, input_);
+    {
+      MicrosecondTimer timer(&usec);
+      inputs_[thisGroup] = reader.loadRowGroup(thisGroup, input_);
+      fetchWaitTime += usec;
+    }
   }
   for (auto counter = 0; counter < options_.prefetchRowGroups(); ++counter) {
     if (nextGroup) {
       if (inputs_.count(nextGroup) == 0) {
+        MicrosecondTimer timer(&usec);
         inputs_[nextGroup] = reader.loadRowGroup(nextGroup, input_);
+        fetchWaitTime += usec;
       }
     } else {
       break;
@@ -795,6 +804,7 @@ bool ParquetRowReader::advanceToNextRowGroup() {
 void ParquetRowReader::updateRuntimeStats(
     dwio::common::RuntimeStatistics& stats) const {
   stats.skippedStrides += skippedRowGroups_;
+  stats.fetchWaitTime += readerBase_->fetchWaitTime;
 }
 
 void ParquetRowReader::resetFilterCaches() {

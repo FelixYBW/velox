@@ -535,6 +535,9 @@ struct RuntimeStatistics {
   // Number of strides (row groups) skipped based on statistics.
   int64_t skippedStrides{0};
 
+  // time spent on fetch wait
+  uint64_t fetchWaitTime{0};
+
   ColumnReaderStatistics columnReaderStatistics;
 
   std::unordered_map<std::string, RuntimeCounter> toMap() {
@@ -544,7 +547,8 @@ struct RuntimeStatistics {
          RuntimeCounter(skippedSplitBytes, RuntimeCounter::Unit::kBytes)},
         {"skippedStrides", RuntimeCounter(skippedStrides)},
         {"flattenStringDictionaryValues",
-         RuntimeCounter(columnReaderStatistics.flattenStringDictionaryValues)}};
+         RuntimeCounter(columnReaderStatistics.flattenStringDictionaryValues)},
+        {"fetchWaitTime", RuntimeCounter(fetchWaitTime)}};
   }
 };
 
