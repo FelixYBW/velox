@@ -67,7 +67,7 @@ class ReaderOptions {
   int32_t prefetchRowGroups_{kDefaultPrefetchRowGroups};
 
  public:
-  static constexpr int32_t kDefaultLoadQuantum = 8 << 20; // 8MB
+  static constexpr int32_t kDefaultLoadQuantum = 1 << 20; // 1MB
   static constexpr int32_t kDefaultCoalesceDistance = 512 << 10; // 512K
   static constexpr int32_t kDefaultCoalesceBytes = 128 << 20; // 128M
   static constexpr int32_t kDefaultPrefetchRowGroups = 1;

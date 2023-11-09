@@ -19,6 +19,7 @@
 #include "velox/common/memory/AllocationPool.h"
 #include "velox/dwio/common/SeekableInputStream.h"
 #include "velox/dwio/common/StreamIdentifier.h"
+#include "velox/common/file/Region.h"
 
 // Use WS VRead API to load
 DECLARE_bool(wsVRLoad);
@@ -148,13 +149,12 @@ class BufferedInput {
  protected:
   std::shared_ptr<ReadFileInputStream> input_;
   memory::MemoryPool& pool_;
-
- private:
-  uint64_t maxMergeDistance_;
-  std::optional<bool> wsVRLoad_;
-  std::unique_ptr<memory::AllocationPool> allocPool_;
-
-  // Regions enqueued for reading
+  // We either load data parallelly or sequentially according to flag
+  void loadWithAction(
+      const LogType logType,
+      std::function<void(void* FOLLY_NONNULL, uint64_t, uint64_t, LogType)>
+          action);
+    // Regions enqueued for reading
   std::vector<velox::common::Region> regions_;
 
   // Offsets in the file to which the corresponding Region belongs
@@ -162,6 +162,10 @@ class BufferedInput {
 
   // Buffers allocated for reading each Region.
   std::vector<folly::Range<char*>> buffers_;
+ private:
+  uint64_t maxMergeDistance_;
+  std::optional<bool> wsVRLoad_;
+  std::unique_ptr<memory::AllocationPool> allocPool_;
 
   // Maps the position in which the Region was originally enqueued to the
   // position that it went to after sorting and merging. Thus this maps from the
@@ -187,7 +191,20 @@ class BufferedInput {
   bool useVRead() const;
   void sortRegions();
   void mergeRegions();
+  void readRegion(
+      const velox::common::Region& region,
+      const LogType logType,
+      std::function<void(void* FOLLY_NONNULL, uint64_t, uint64_t, LogType)>
+          action) {
+    offsets_.push_back(region.offset);
+    DataBuffer<char> buffer(pool_, region.length);
 
+    // action is required
+    DWIO_ENSURE_NOT_NULL(action);
+    action(buffer.data(), region.length, region.offset, logType);
+
+    buffers_.push_back(folly::Range<char*>(buffer.data(), region.length));
+  }
   // tries and merges WS read regions into one
   bool tryMerge(
       velox::common::Region& first,

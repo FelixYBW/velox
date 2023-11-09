@@ -22,6 +22,7 @@
 #include "velox/connectors/hive/SplitReader.h"
 #include "velox/connectors/hive/TableHandle.h"
 #include "velox/dwio/common/BufferedInput.h"
+#include "velox/dwio/common/ParallelBufferedInput.h"
 #include "velox/dwio/common/Reader.h"
 #include "velox/dwio/common/ScanSpec.h"
 #include "velox/exec/OperatorUtils.h"
@@ -42,6 +43,7 @@ class HiveDataSource : public DataSource {
       cache::AsyncDataCache* cache,
       const std::string& scanId,
       folly::Executor* executor,
+      const bool parallelLoadEnable,
       const dwio::common::ReaderOptions& options);
 
   void addSplit(std::shared_ptr<ConnectorSplit> split) override;
@@ -159,6 +161,7 @@ class HiveDataSource : public DataSource {
   cache::AsyncDataCache* const cache_{nullptr};
   const std::string& scanId_;
   folly::Executor* executor_;
+  const bool parallelLoadEnable_;
 };
 
 } // namespace facebook::velox::connector::hive

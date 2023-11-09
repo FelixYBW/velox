@@ -49,6 +49,9 @@ class HiveConfig {
   static constexpr const char* kImmutablePartitions =
       "hive.immutable-partitions";
 
+  /// Use ParallelBufferedInput to load split data.
+  static constexpr const char* kParallelLoadEnabled = "enable_parallel_load";
+
   /// Virtual addressing is used for AWS S3 and is the default
   /// (path-style-access is false). Path access style is used for some on-prem
   /// systems like Minio.
@@ -183,6 +186,7 @@ class HiveConfig {
   /// Returns the timestamp unit used in Velox-Arrow conversion.
   /// 0: second, 1: milli, 2: micro, 3: nano.
   static uint8_t arrowBridgeTimestampUnit(const Config* config);
+  static bool parallelLoadEnabled(const Config* config);
 
   static uint64_t getOrcWriterMaxStripeSize(
       const Config* connectorQueryCtxConfig,

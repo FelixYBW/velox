@@ -27,6 +27,7 @@ add_library(
   BitPackDecoder.cpp
   BufferedInput.cpp
   CachedBufferedInput.cpp
+  ParallelBufferedInput.cpp
   CacheInputStream.cpp
   DirectBufferedInput.cpp
   DirectInputStream.cpp
