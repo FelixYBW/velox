@@ -49,6 +49,9 @@ class HiveConfig {
   static constexpr const char* kImmutablePartitions =
       "hive.immutable-partitions";
 
+  /// Use ParallelBufferedInput to load split data.
+  static constexpr const char* kParallelLoadEnabled = "enable_parallel_load";
+
   /// Virtual addressing is used for AWS S3 and is the default
   /// (path-style-access is false). Path access style is used for some on-prem
   /// systems like Minio.
@@ -160,6 +163,8 @@ class HiveConfig {
   static int32_t numCacheFileHandles(const Config* config);
 
   static uint64_t fileWriterFlushThresholdBytes(const Config* config);
+
+  static bool parallelLoadEnabled(const Config* config);
 
   static uint64_t getOrcWriterMaxStripeSize(
       const Config* connectorQueryCtxConfig,

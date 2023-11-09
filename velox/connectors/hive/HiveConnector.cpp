@@ -95,6 +95,7 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
       connectorQueryCtx->cache(),
       connectorQueryCtx->scanId(),
       executor_,
+      HiveConfig::parallelLoadEnabled(connectorQueryCtx->config()),
       options);
 }
 

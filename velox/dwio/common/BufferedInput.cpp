@@ -173,6 +173,27 @@ void BufferedInput::mergeRegions() {
   std::swap(e, te);
 }
 
+void BufferedInput::loadWithAction(
+    const LogType logType,
+    std::function<void(void*, uint64_t, uint64_t, LogType)> action) {
+  Region last;
+  for (const auto& region : regions_) {
+    DWIO_ENSURE_GT(region.length, 0, "invalid region");
+    if (last.length == 0) {
+      // first region
+      last = region;
+    } else {
+      if (!tryMerge(last, region)) {
+        readRegion(last, logType, action);
+        last = region;
+      }
+    }
+  }
+
+  // handle last region
+  readRegion(last, logType, action);
+}
+
 bool BufferedInput::tryMerge(Region& first, const Region& second) {
   DWIO_ENSURE_GE(second.offset, first.offset, "regions should be sorted.");
   const int64_t gap = second.offset - first.offset - first.length;

@@ -166,6 +166,10 @@ int32_t HiveConfig::numCacheFileHandles(const Config* config) {
   return config->get<int32_t>(kNumCacheFileHandles, 20'000);
 }
 
+bool HiveConfig::parallelLoadEnabled(const Config* config) {
+  return config->get<bool>(kParallelLoadEnabled, true);
+}
+
 uint64_t HiveConfig::getOrcWriterMaxStripeSize(
     const Config* connectorQueryCtxConfig,
     const Config* connectorPropertiesConfig) {

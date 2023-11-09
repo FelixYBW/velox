@@ -361,6 +361,7 @@ HiveDataSource::HiveDataSource(
     cache::AsyncDataCache* cache,
     const std::string& scanId,
     folly::Executor* executor,
+    const bool parallelLoadEnable,
     const dwio::common::ReaderOptions& options)
     : fileHandleFactory_(fileHandleFactory),
       readerOpts_(options),
@@ -369,7 +370,8 @@ HiveDataSource::HiveDataSource(
       expressionEvaluator_(expressionEvaluator),
       cache_(cache),
       scanId_(scanId),
-      executor_(executor) {
+      executor_(executor),
+      parallelLoadEnable_(parallelLoadEnable) {
   // Column handled keyed on the column alias, the name used in the query.
   for (const auto& [canonicalizedName, columnHandle] : columnHandles) {
     auto handle = std::dynamic_pointer_cast<HiveColumnHandle>(columnHandle);
@@ -805,12 +807,21 @@ HiveDataSource::createBufferedInput(
         ioStats_,
         executor_,
         readerOpts);
+  } else if (parallelLoadEnable_) {
+    return std::make_unique<dwio::common::ParallelBufferedInput>(
+        fileHandle.file,
+        readerOpts_.getMemoryPool(),
+        dwio::common::MetricsLog::voidLog(),
+        ioStats_,
+        executor_,
+        readerOpts_.loadQuantum());
+  } else {
+    return std::make_unique<dwio::common::BufferedInput>(
+        fileHandle.file,
+        readerOpts.getMemoryPool(),
+        dwio::common::MetricsLog::voidLog(),
+        ioStats_.get());
   }
-  return std::make_unique<dwio::common::BufferedInput>(
-      fileHandle.file,
-      readerOpts.getMemoryPool(),
-      dwio::common::MetricsLog::voidLog(),
-      ioStats_.get());
 }
 
 vector_size_t HiveDataSource::evaluateRemainingFilter(RowVectorPtr& rowVector) {
