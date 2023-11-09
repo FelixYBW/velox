@@ -89,6 +89,8 @@ class ReaderBase {
       const RowTypePtr& rowTypePtr,
       bool fileColumnNamesReadAsLowerCase);
 
+  uint64_t fetchWaitTime = 0;
+
  private:
   // Reads and parses file footer.
   void loadFileMetaData();
@@ -311,8 +313,8 @@ std::shared_ptr<const ParquetTypeWithId> ReaderBase::getParquetColumnInfo(
     } else {
       if (schemaElement.repetition_type ==
           thrift::FieldRepetitionType::REPEATED) {
-        //VELOX_CHECK_LE(
-            //children.size(), 2, "children size should not be larger than 2");
+        // VELOX_CHECK_LE(
+        // children.size(), 2, "children size should not be larger than 2");
         if (children.size() == 1) {
           // child of LIST
           auto childrenCopy = children;
@@ -353,10 +355,10 @@ std::shared_ptr<const ParquetTypeWithId> ReaderBase::getParquetColumnInfo(
               ParquetTypeWithId::kNonLeaf, // columnIdx,
               std::move(name),
               std::nullopt,
-	      std::nullopt,
+              std::nullopt,
               maxRepeat,
               maxDefine);
-	}
+        }
       } else {
         // Row type
         auto childrenCopy = children;
@@ -614,13 +616,16 @@ void ReaderBase::scheduleRowGroups(
     const std::vector<uint32_t>& rowGroupIds,
     int32_t currentGroup,
     StructColumnReader& reader) {
+  uint64_t usec = 0;
   auto numRowGroupsToLoad = std::min(
       options_.prefetchRowGroups() + 1,
       static_cast<int64_t>(rowGroupIds.size() - currentGroup));
   for (auto i = 0; i < numRowGroupsToLoad; i++) {
     auto thisGroup = rowGroupIds[currentGroup + i];
     if (!inputs_[thisGroup]) {
+      MicrosecondTimer timer(&usec);
       inputs_[thisGroup] = reader.loadRowGroup(thisGroup, input_);
+      fetchWaitTime += usec;
     }
   }
 
@@ -790,6 +795,7 @@ bool ParquetRowReader::advanceToNextRowGroup() {
 void ParquetRowReader::updateRuntimeStats(
     dwio::common::RuntimeStatistics& stats) const {
   stats.skippedStrides += skippedRowGroups_;
+  stats.fetchWaitTime += readerBase_->fetchWaitTime;
 }
 
 void ParquetRowReader::resetFilterCaches() {
