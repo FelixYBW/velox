@@ -44,6 +44,7 @@ class HiveDataSource : public DataSource {
       const std::string& scanId,
       folly::Executor* executor,
       const bool parallelLoadEnable,
+      folly::Executor* executor2,
       const dwio::common::ReaderOptions& options);
 
   void addSplit(std::shared_ptr<ConnectorSplit> split) override;
@@ -161,6 +162,7 @@ class HiveDataSource : public DataSource {
   const std::string& scanId_;
   folly::Executor* executor_;
   const bool parallelLoadEnable_;
+  folly::Executor* executor2_;
 };
 
 } // namespace facebook::velox::connector::hive

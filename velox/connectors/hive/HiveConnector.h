@@ -31,7 +31,8 @@ class HiveConnector : public Connector {
   HiveConnector(
       const std::string& id,
       std::shared_ptr<const Config> properties,
-      folly::Executor* FOLLY_NULLABLE executor);
+      folly::Executor* FOLLY_NULLABLE executor,
+      folly::Executor* FOLLY_NULLABLE executor2);
 
   bool canAddDynamicFilter() const override {
     return true;
@@ -72,6 +73,7 @@ class HiveConnector : public Connector {
  protected:
   FileHandleFactory fileHandleFactory_;
   folly::Executor* FOLLY_NULLABLE executor_;
+  folly::Executor* FOLLY_NULLABLE executor2_;
 };
 
 class HiveConnectorFactory : public ConnectorFactory {
@@ -92,8 +94,9 @@ class HiveConnectorFactory : public ConnectorFactory {
   std::shared_ptr<Connector> newConnector(
       const std::string& id,
       std::shared_ptr<const Config> properties,
-      folly::Executor* FOLLY_NULLABLE executor = nullptr) override {
-    return std::make_shared<HiveConnector>(id, properties, executor);
+      folly::Executor* FOLLY_NULLABLE executor = nullptr,
+      folly::Executor* FOLLY_NULLABLE executor2 = nullptr) override {
+    return std::make_shared<HiveConnector>(id, properties, executor, executor2);
   }
 };
 
