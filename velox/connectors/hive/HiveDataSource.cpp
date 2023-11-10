@@ -815,6 +815,7 @@ HiveDataSource::createBufferedInput(
         executor_,
         readerOpts);
   } else if (parallelLoadEnable_) {
+    std::cout << "Constructing Parallel Load.." << std::endl;
     return std::make_unique<dwio::common::ParallelBufferedInput>(
         fileHandle.file,
         readerOpts_.getMemoryPool(),
