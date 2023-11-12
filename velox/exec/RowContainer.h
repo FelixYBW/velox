@@ -834,8 +834,6 @@ class RowContainer {
 
     BufferPtr& nullBuffer = result->mutableNulls(maxRows);
     auto nulls = nullBuffer->asMutable<uint64_t>();
-    BufferPtr valuesBuffer = result->mutableValues(maxRows);
-    auto values = valuesBuffer->asMutableRange<T>();
     for (int32_t i = 0; i < numRows; ++i) {
       const char* row;
       if constexpr (useRowNumbers) {
@@ -852,6 +850,8 @@ class RowContainer {
         if constexpr (std::is_same_v<T, StringView>) {
           extractString(valueAt<StringView>(row, offset), result, resultIndex);
         } else {
+          BufferPtr valuesBuffer = result->mutableValues(maxRows);
+          auto values = valuesBuffer->asMutableRange<T>();
           values[resultIndex] = valueAt<T>(row, offset);
         }
       }
@@ -866,10 +866,6 @@ class RowContainer {
       int32_t offset,
       int32_t resultOffset,
       FlatVector<T>* FOLLY_NONNULL result) {
-    auto maxRows = numRows + resultOffset;
-    VELOX_DCHECK_LE(maxRows, result->size());
-    BufferPtr valuesBuffer = result->mutableValues(maxRows);
-    auto values = valuesBuffer->asMutableRange<T>();
     for (int32_t i = 0; i < numRows; ++i) {
       const char* row;
       if constexpr (useRowNumbers) {
@@ -886,6 +882,10 @@ class RowContainer {
         if constexpr (std::is_same_v<T, StringView>) {
           extractString(valueAt<StringView>(row, offset), result, resultIndex);
         } else {
+          auto maxRows = numRows + resultOffset;
+          VELOX_DCHECK_LE(maxRows, result->size());
+          BufferPtr valuesBuffer = result->mutableValues(maxRows);
+          auto values = valuesBuffer->asMutableRange<T>();
           values[resultIndex] = valueAt<T>(row, offset);
         }
       }

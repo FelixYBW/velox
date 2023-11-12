@@ -55,16 +55,16 @@ int32_t numCachedFileHandles(const Config* properties) {
 HiveConnector::HiveConnector(
     const std::string& id,
     std::shared_ptr<const Config> properties,
-    folly::Executor* FOLLY_NULLABLE executor,
-    folly::Executor* FOLLY_NULLABLE executor2)
+    folly::Executor* FOLLY_NULLABLE executor/*,
+    folly::Executor* FOLLY_NULLABLE executor2*/)
     : Connector(id, properties),
       fileHandleFactory_(
           std::make_unique<
               SimpleLRUCache<std::string, std::shared_ptr<FileHandle>>>(
               numCachedFileHandles(properties.get())),
           std::make_unique<FileHandleGenerator>(properties)),
-      executor_(executor),
-      executor2_(executor2) {
+      executor_(executor)/*,
+      executor2_(executor2)*/ {
   LOG(INFO) << "Hive connector " << connectorId() << " created with maximum of "
             << numCachedFileHandles(properties.get())
             << " cached file handles.";
@@ -97,8 +97,8 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
       connectorQueryCtx->cache(),
       connectorQueryCtx->scanId(),
       executor_,
-      HiveConfig::parallelLoadEnabled(connectorQueryCtx->config()),
-      executor2_,
+      HiveConfig::parallelLoadEnabled(connectorProperties().get()),
+//      executor2_,
       options);
 }
 

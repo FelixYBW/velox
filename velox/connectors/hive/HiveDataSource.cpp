@@ -18,6 +18,9 @@
 
 #include <string>
 #include <unordered_map>
+#define BOOST_STACKTRACE_LINK
+#include <boost/stacktrace.hpp>
+
 
 #include "velox/dwio/common/CachedBufferedInput.h"
 #include "velox/dwio/common/ReaderFactory.h"
@@ -362,7 +365,7 @@ HiveDataSource::HiveDataSource(
     const std::string& scanId,
     folly::Executor* executor,
     const bool parallelLoadEnable,
-    folly::Executor* executor2,
+//    folly::Executor* executor2,
     const dwio::common::ReaderOptions& options)
     : fileHandleFactory_(fileHandleFactory),
       readerOpts_(options),
@@ -372,9 +375,10 @@ HiveDataSource::HiveDataSource(
       cache_(cache),
       scanId_(scanId),
       executor_(executor),
-      parallelLoadEnable_(parallelLoadEnable),
-      executor2_(executor2) {
+      parallelLoadEnable_(parallelLoadEnable){
+//      executor2_(executor2) {
   // Column handled keyed on the column alias, the name used in the query.
+  
   for (const auto& [canonicalizedName, columnHandle] : columnHandles) {
     auto handle = std::dynamic_pointer_cast<HiveColumnHandle>(columnHandle);
     VELOX_CHECK(
@@ -810,13 +814,13 @@ HiveDataSource::createBufferedInput(
         executor_,
         readerOpts);
   } else if (parallelLoadEnable_) {
-    std::cout << "Constructing Parallel Load.." << std::endl;
+    std::cout << "xgbtck Constructing Parallel Load.." << std::endl;
     return std::make_unique<dwio::common::ParallelBufferedInput>(
         fileHandle.file,
         readerOpts_.getMemoryPool(),
         dwio::common::MetricsLog::voidLog(),
         ioStats_,
-        executor2_,
+        executor_,
         readerOpts_.loadQuantum());
   } else {
     return std::make_unique<dwio::common::BufferedInput>(

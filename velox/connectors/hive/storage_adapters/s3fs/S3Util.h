@@ -113,6 +113,9 @@ inline void getBucketAndKeyFromS3Path(
   auto firstSep = decodedPath.find_first_of(kSep);
   bucket = decodedPath.substr(0, firstSep);
   key = decodedPath.substr(firstSep + 1);
+//  auto firstSep = path.find_first_of(kSep);
+//  bucket = path.substr(0, firstSep);
+//  key = path.substr(firstSep + 1);
 }
 
 // TODO: Correctness check for bucket name.

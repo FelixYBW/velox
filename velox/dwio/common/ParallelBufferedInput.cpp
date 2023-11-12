@@ -125,7 +125,7 @@ void ParallelBufferedInput::loadParallel(
         futures.push_back(std::move(future));
       }
     }
-
+    std::cout << " xgbtck parallel load, parallelism = " << futures.size() << std::endl;
     for (int64_t i = futures.size() - 1; i >= 0; --i) {
       futures[i].wait();
     }

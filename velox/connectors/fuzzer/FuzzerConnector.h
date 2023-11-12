@@ -140,8 +140,8 @@ class FuzzerConnectorFactory : public ConnectorFactory {
   std::shared_ptr<Connector> newConnector(
       const std::string& id,
       std::shared_ptr<const Config> properties,
-      folly::Executor* FOLLY_NULLABLE executor = nullptr,      
-      folly::Executor* FOLLY_NULLABLE executor2 = nullptr) override {
+      folly::Executor* FOLLY_NULLABLE executor = nullptr/*,      
+      folly::Executor* FOLLY_NULLABLE executor2 = nullptr*/) override {
     return std::make_shared<FuzzerConnector>(id, properties, executor);
   }
 };
