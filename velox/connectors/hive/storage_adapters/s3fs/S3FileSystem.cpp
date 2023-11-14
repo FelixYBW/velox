@@ -44,6 +44,12 @@
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/UploadPartRequest.h>
 
+#include <aws/core/utils/memory/stl/AWSString.h>
+#include <aws/core/utils/logging/DefaultLogSystem.h>
+#include <aws/core/utils/logging/AWSLogging.h>
+
+#include <iostream>
+    
 namespace facebook::velox {
 namespace {
 // Reference: https://issues.apache.org/jira/browse/ARROW-8692
@@ -469,8 +475,8 @@ struct AwsInstance {
 
  private:
   void doInitialize(const Config* config) {
-    awsOptions_.loggingOptions.logLevel =
-        inferS3LogLevel(HiveConfig::s3GetLogLevel(config));
+    //awsOptions_.loggingOptions.logLevel =
+    //    inferS3LogLevel(HiveConfig::s3GetLogLevel(config));
     // In some situations, curl triggers a SIGPIPE signal causing the entire
     // process to be terminated without any notification.
     // This behavior is seen via Prestissimo on AmazonLinux2 on AWS EC2.
@@ -479,6 +485,9 @@ struct AwsInstance {
     // This option allows the AWS SDK C++ to catch the SIGPIPE signal and
     // log a message.
     awsOptions_.httpOptions.installSigPipeHandler = true;
+    //awsOptions_.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
+    //awsOptions_.loggingOptions.logger_create_fn = [] { return std::make_shared<Aws::Utils::Logging::ConsoleLogSystem>(Aws::Utils::Logging::LogLevel::Trace); };
+
     Aws::InitAPI(awsOptions_);
   }
 

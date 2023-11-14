@@ -15,15 +15,26 @@
  */
 
 #include <fmt/format.h>
+#include <execinfo.h> /* backtrace, backtrace_symbols_fd */
+#include <unistd.h> /* STDOUT_FILENO */
 
 #include "folly/io/Cursor.h"
 #include "velox/dwio/common/BufferedInput.h"
+
 
 DEFINE_bool(wsVRLoad, false, "Use WS VRead API to load");
 
 using ::facebook::velox::common::Region;
 
 namespace facebook::velox::dwio::common {
+
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+}
 
 void BufferedInput::load(const LogType logType) {
   // no regions to load
@@ -45,8 +56,11 @@ void BufferedInput::load(const LogType logType) {
   if (useVRead()) {
     // Now we have all buffers and regions, load it in parallel
     std::vector<folly::IOBuf> iobufs(regions_.size());
+
     input_->vread(regions_, {iobufs.data(), iobufs.size()}, logType);
     for (size_t i = 0; i < regions_.size(); ++i) {
+      std::cout<< "xgbtck vRead regions[" << i << "] length=" << regions_[i].length << std::endl;
+
       const auto& region = regions_[i];
       auto iobuf = std::move(iobufs[i]);
 
@@ -80,6 +94,7 @@ void BufferedInput::load(const LogType logType) {
 std::unique_ptr<SeekableInputStream> BufferedInput::enqueue(
     Region region,
     const dwio::common::StreamIdentifier* /*si*/) {
+  
   if (region.length == 0) {
     return std::make_unique<SeekableArrayInputStream>(
         static_cast<const char*>(nullptr), 0);
@@ -176,6 +191,7 @@ void BufferedInput::mergeRegions() {
 void BufferedInput::loadWithAction(
     const LogType logType,
     std::function<void(void*, uint64_t, uint64_t, LogType)> action) {
+
   Region last;
   for (const auto& region : regions_) {
     DWIO_ENSURE_GT(region.length, 0, "invalid region");

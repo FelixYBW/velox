@@ -172,6 +172,8 @@ void SplitReader::prepareSplit(
     runtimeStats.skippedSplitBytes += hiveSplit_->length;
     return;
   }
+  
+  ++runtimeStats.processedSplits;
 
   auto& fileType = baseReader_->rowType();
   auto columnTypes = adaptColumns(fileType, readerOptions.getFileSchema());
