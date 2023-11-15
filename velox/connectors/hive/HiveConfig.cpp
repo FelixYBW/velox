@@ -179,6 +179,7 @@ uint32_t HiveConfig::sortWriterMaxOutputRows(const Config* config) {
 // static.
 uint64_t HiveConfig::sortWriterMaxOutputBytes(const Config* config) {
   return config->get<uint64_t>(kSortWriterMaxOutputBytes, 10UL << 20);
+}
 
 bool HiveConfig::parallelLoadEnabled(const Config* config) {
   return config->get<bool>(kParallelLoadEnabled, true);
