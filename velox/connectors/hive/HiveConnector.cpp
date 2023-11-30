@@ -99,6 +99,9 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
           connectorQueryCtx->config()));
   options.setUseColumnNamesForColumnMapping(
       HiveConfig::isOrcUseColumnNames(connectorQueryCtx->config()));
+  options.setPrefetchRowGroups(
+      connectorQueryCtx->config()->get<uint32_t>(kPrefetchRowGroups, options::kDefaultPrefetchRowGroups));
+
 
   return std::make_unique<HiveDataSource>(
       outputType,

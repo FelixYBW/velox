@@ -133,6 +133,9 @@ class HiveConfig {
   // Timestamp unit used during Velox-Arrow conversion.
   static constexpr const char* kArrowBridgeTimestampUnit =
       "arrow.bridge.timestamp.unit";
+  /// set the preload rowgroup number.
+  static constexpr const char* kPrefetchRowGroups = "refetch_rowgroups";
+
 
   static InsertExistingPartitionsBehavior insertExistingPartitionsBehavior(
       const Config* config);
