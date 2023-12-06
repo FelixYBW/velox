@@ -102,6 +102,9 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
   options.setPrefetchRowGroups(connectorQueryCtx->config()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kPrefetchRowGroups,
       velox::dwio::common::ReaderOptions::kDefaultPrefetchRowGroups));
+  options.setMaxCoalesceDistance(connectorQueryCtx->config()->get<uint32_t>(
+      velox::connector::hive::HiveConfig::kMaxCoalesceDistance,
+      velox::dwio::common::ReaderOptions::kDefaultCoalesceDistance));
 
   return std::make_unique<HiveDataSource>(
       outputType,

@@ -21,11 +21,14 @@
 #include "velox/connectors/hive/storage_adapters/s3fs/S3WriteFile.h"
 #include "velox/core/Config.h"
 #include "velox/dwio/common/DataBuffer.h"
+#include <thread>
 
 #include <fmt/format.h>
 #include <glog/logging.h>
 #include <memory>
 #include <stdexcept>
+#include <execinfo.h> /* backtrace, backtrace_symbols_fd */
+#include <unistd.h> /* STDOUT_FILENO */
 
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
@@ -68,7 +71,13 @@ class StringViewStream : Aws::Utils::Stream::PreallocatedStreamBuf,
 Aws::IOStreamFactory AwsWriteableStreamFactory(void* data, int64_t nbytes) {
   return [=]() { return Aws::New<StringViewStream>("", data, nbytes); };
 }
-
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+}
 // TODO: Implement retry on failure.
 class S3ReadFile final : public ReadFile {
  public:
@@ -162,6 +171,9 @@ class S3ReadFile final : public ReadFile {
   // bytes.
   void preadInternal(uint64_t offset, uint64_t length, char* position) const {
     // Read the desired range of bytes.
+    
+    print_stacktrace();
+
     Aws::S3::Model::GetObjectRequest request;
     Aws::S3::Model::GetObjectResult result;
 
@@ -172,7 +184,18 @@ class S3ReadFile final : public ReadFile {
     request.SetRange(awsString(ss.str()));
     request.SetResponseStreamFactory(
         AwsWriteableStreamFactory(position, length));
+    auto start = std::chrono::system_clock::now();
+    auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        start.time_since_epoch());
     auto outcome = client_->GetObject(request);
+    auto end = std::chrono::system_clock::now();
+    std::cout << "LATENCY_BREAKDOWN: [S3 Pread]" << std::this_thread::get_id()
+              << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - start)
+                     .count()
+              << " " << length
+              << std::endl;
     VELOX_CHECK_AWS_OUTCOME(outcome, "Failed to get S3 object", bucket_, key_);
   }
 

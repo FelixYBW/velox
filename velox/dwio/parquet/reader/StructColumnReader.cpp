@@ -15,10 +15,11 @@
  */
 
 #include "velox/dwio/parquet/reader/StructColumnReader.h"
-
+#include <thread>
 #include "velox/dwio/common/BufferedInput.h"
 #include "velox/dwio/parquet/reader/ParquetColumnReader.h"
 #include "velox/dwio/parquet/reader/RepeatedColumnReader.h"
+
 
 namespace facebook::velox::common {
 class ScanSpec;
@@ -140,8 +141,21 @@ std::shared_ptr<dwio::common::BufferedInput> StructColumnReader::loadRowGroup(
   }
   auto newInput = input->clone();
   enqueueRowGroup(index, *newInput);
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
   newInput->load(dwio::common::LogType::STRIPE);
+  auto end = std::chrono::system_clock::now();
+  std::cout << "LATENCY_BREAKDOWN: [New Input Load]"
+            << std::this_thread::get_id() << " " << startTime.count() << " "
+            << std::chrono::duration_cast<std::chrono::microseconds>(
+                   end - start)
+                   .count()
+            << " "
+            << index
+            << std::endl;
   return newInput;
+  
 }
 
 bool StructColumnReader::isRowGroupBuffered(

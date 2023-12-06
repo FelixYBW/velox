@@ -27,6 +27,7 @@ namespace facebook::velox::dwio::common {
 
 void BufferedInput::load(const LogType logType) {
   // no regions to load
+  std::cout << "xgbtck regions_.size() " << regions_.size() << std::endl;
   if (regions_.size() == 0) {
     return;
   }

@@ -31,11 +31,18 @@ export CMAKE_BUILD_TYPE=Release
 # Install all velox and folly dependencies. 
 # The is an issue on 22.04 where a version conflict prevents glog install,
 # installing libunwind first fixes this.
-sudo --preserve-env apt update && sudo --preserve-env apt install -y libunwind-dev && \
+sudo --preserve-env apt update && \
   sudo --preserve-env apt install -y \
   g++ \
   cmake \
   ccache \
+  uuid-dev \
+  libuuid1 \
+  libgsasl7-dev \
+  libkrb5-dev \
+  libxml2-dev \
+  libiberty-dev \
+  *thrift* \
   ninja-build \
   checkinstall \
   git \
@@ -48,11 +55,9 @@ sudo --preserve-env apt update && sudo --preserve-env apt install -y libunwind-d
   libgoogle-glog-dev \
   libbz2-dev \
   libgflags-dev \
-  libgmock-dev \
   libevent-dev \
   liblz4-dev \
   libzstd-dev \
-  libre2-dev \
   libsnappy-dev \
   libsodium-dev \
   libthrift-dev \
@@ -84,6 +89,11 @@ function prompt {
     done
   ) 2> /dev/null
 }
+
+function install_awssdk {
+  github_checkout aws/aws-sdk-cpp 1.9.379 --depth 1 --recurse-submodules
+  cmake_install -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS:BOOL=OFF -DMINIMIZE_SIZE:BOOL=ON -DENABLE_TESTING:BOOL=OFF -DBUILD_ONLY:STRING="s3;identity-management" 
+} 
 
 function install_fmt {
   github_checkout fmtlib/fmt 8.0.1
@@ -119,11 +129,12 @@ function install_conda {
 
 function install_velox_deps {
   run_and_time install_fmt
+  run_and_time install_awssdk
   run_and_time install_folly
   run_and_time install_fizz
   run_and_time install_wangle
   run_and_time install_fbthrift
-  run_and_time install_conda
+  #run_and_time install_conda
 }
 
 (return 2> /dev/null) && return # If script was sourced, don't run commands.

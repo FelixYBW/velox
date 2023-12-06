@@ -21,6 +21,7 @@
 #include "velox/dwio/parquet/thrift/ThriftTransport.h"
 
 #include <thrift/protocol/TCompactProtocol.h> //@manual
+#include <thread>
 
 namespace facebook::velox::parquet {
 
@@ -775,7 +776,18 @@ uint64_t ParquetRowReader::next(
 }
 
 bool ParquetRowReader::advanceToNextRowGroup() {
+
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+
   if (nextRowGroupIdsIdx_ == rowGroupIds_.size()) {
+    std::cout << "LATENCY_BREAKDOWN: [advanceToNextRowGroup]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << 0
+              << " "
+              << nextRowGroupIdsIdx_ << " " << rowGroupIds_.size()
+              << std::endl;
     return false;
   }
 
@@ -789,6 +801,18 @@ bool ParquetRowReader::advanceToNextRowGroup() {
   currentRowInGroup_ = 0;
   nextRowGroupIdsIdx_++;
   columnReader_->seekToRowGroup(nextRowGroupIndex);
+
+  auto end = std::chrono::system_clock::now();
+  std::cout << "LATENCY_BREAKDOWN: [advanceToNextRowGroup]"
+            << std::this_thread::get_id() << " " << startTime.count() << " "
+            << std::chrono::duration_cast<std::chrono::microseconds>(
+                  end - start)
+                  .count()
+            << " "
+            << rowsInCurrentRowGroup_
+            << std::endl;
+
+
   return true;
 }
 

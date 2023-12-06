@@ -123,7 +123,9 @@ class DirectBufferedInput : public BufferedInput {
         ioStats_(std::move(ioStats)),
         executor_(executor),
         fileSize_(input_->getLength()),
-        options_(readerOptions) {}
+        options_(readerOptions) {
+          std::cout << "xgbtck maxCoalesceDistance = " << options_.maxCoalesceDistance() << " prefetchRowGroups = " << options_.prefetchRowGroups() << std::endl;
+        }
 
   ~DirectBufferedInput() override {
     for (auto& load : coalescedLoads_) {

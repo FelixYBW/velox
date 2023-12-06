@@ -103,7 +103,7 @@ function get_cxx_flags {
     ;;
 
     "avx")
-      echo -n "-mavx2 -mfma -mavx -mf16c -mlzcnt -std=c++17 -mbmi2 $ADDITIONAL_FLAGS"
+      echo -n "-march=native -std=c++17 -mno-avx512f -mbmi2 $ADDITIONAL_FLAGS"
     ;;
 
     "sse")
@@ -139,6 +139,6 @@ function cmake_install {
     -DCMAKE_CXX_FLAGS="$COMPILER_FLAGS" \
     -DBUILD_TESTING=OFF \
     "$@"
-  ninja -C "${BINARY_DIR}" install
+  sudo ninja -C "${BINARY_DIR}" install
 }
 

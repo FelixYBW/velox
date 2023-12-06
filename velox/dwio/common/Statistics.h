@@ -553,7 +553,7 @@ struct RuntimeStatistics {
         {"skippedSplitBytes",
          RuntimeCounter(skippedSplitBytes, RuntimeCounter::Unit::kBytes)},
         {"skippedStrides", RuntimeCounter(skippedStrides)},
-        {"processedSplits", RuntimeCounter(processedSplits)},
+        {"processedStrides", RuntimeCounter(processedStrides)},
         {"flattenStringDictionaryValues",
          RuntimeCounter(columnReaderStatistics.flattenStringDictionaryValues)},
         {"fetchWaitTime", RuntimeCounter(fetchWaitTime)}};

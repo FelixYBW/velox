@@ -18,6 +18,7 @@
 
 #include "velox/dwio/common/SeekableInputStream.h"
 #include "velox/dwio/common/compression/Compression.h"
+#include <thread>
 
 namespace facebook::velox::dwio::common::compression {
 

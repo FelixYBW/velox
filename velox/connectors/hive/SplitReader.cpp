@@ -254,7 +254,20 @@ std::vector<TypePtr> SplitReader::adaptColumns(
 }
 
 uint64_t SplitReader::next(int64_t size, VectorPtr& output) {
-  return baseRowReader_->next(size, output);
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+  uint64_t rows = baseRowReader_->next(size, output);
+  auto end = std::chrono::system_clock::now();
+  std::cout << "LATENCY_BREAKDOWN: [RowReader Next]"
+            << std::this_thread::get_id() << " " << startTime.count() << " "
+            << std::chrono::duration_cast<std::chrono::microseconds>(
+                   end - start)
+                   .count()
+            << " "
+            << size
+            << std::endl;
+  return rows;
 }
 
 void SplitReader::resetFilterCaches() {

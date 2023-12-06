@@ -106,7 +106,7 @@ void ParquetData::enqueueRowGroup(
   uint64_t readSize = (metaData.codec == thrift::CompressionCodec::UNCOMPRESSED)
       ? metaData.total_uncompressed_size
       : metaData.total_compressed_size;
-
+  std::cout << "xgbtck enqueue row group " << chunkReadOffset << " size " << readSize << std::endl;
   auto id = dwio::common::StreamIdentifier(type_->column());
   streams_[index] = input.enqueue({chunkReadOffset, readSize}, &id);
 }
