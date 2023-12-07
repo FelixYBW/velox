@@ -172,7 +172,7 @@ class S3ReadFile final : public ReadFile {
   void preadInternal(uint64_t offset, uint64_t length, char* position) const {
     // Read the desired range of bytes.
     
-    print_stacktrace();
+//    print_stacktrace();
 
     Aws::S3::Model::GetObjectRequest request;
     Aws::S3::Model::GetObjectResult result;
@@ -195,6 +195,7 @@ class S3ReadFile final : public ReadFile {
                      end - start)
                      .count()
               << " " << length
+              << " " << offset
               << std::endl;
     VELOX_CHECK_AWS_OUTCOME(outcome, "Failed to get S3 object", bucket_, key_);
   }
