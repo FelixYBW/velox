@@ -99,12 +99,19 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
           connectorQueryCtx->config()));
   options.setUseColumnNamesForColumnMapping(
       HiveConfig::isOrcUseColumnNames(connectorQueryCtx->config()));
-  options.setPrefetchRowGroups(connectorQueryCtx->config()->get<uint32_t>(
+  options.setPrefetchRowGroups(connectorProperties()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kPrefetchRowGroups,
       velox::dwio::common::ReaderOptions::kDefaultPrefetchRowGroups));
-  options.setMaxCoalesceDistance(connectorQueryCtx->config()->get<uint32_t>(
+  options.setMaxCoalesceDistance(connectorProperties()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kMaxCoalesceDistance,
       velox::dwio::common::ReaderOptions::kDefaultCoalesceDistance));
+
+  std::cout << "xgbtck kPrefetchRowGroups = " << connectorProperties()->get<uint32_t>(
+      velox::connector::hive::HiveConfig::kPrefetchRowGroups,
+      velox::dwio::common::ReaderOptions::kDefaultPrefetchRowGroups);
+  std::cout << "xgbtck kPrefetchRowGroups = " << connectorProperties()->get<uint32_t>(
+      velox::connector::hive::HiveConfig::kMaxCoalesceDistance,
+      velox::dwio::common::ReaderOptions::kDefaultCoalesceDistance);
 
   return std::make_unique<HiveDataSource>(
       outputType,
