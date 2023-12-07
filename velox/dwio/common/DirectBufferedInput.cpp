@@ -190,9 +190,9 @@ void DirectBufferedInput::makeLoads(
       auto& load = coalescedLoads_[i];
       DirectCoalescedLoad* dcs = dynamic_cast<DirectCoalescedLoad*>(load.get());
 
-      std::cout << "xgbtck coalescedLoads[" << i << "] state = " << dcs->state() << std::endl;
-      std::for_each(dcs->requests().begin(),dcs->requests().end(),[&](LoadRequest* request){
-        std::cout << "xgbtck coalesce request offset = " << request->region.offset << " length = " << request->region.length << std::endl;
+      std::cout << "xgbtck coalescedLoads[" << i << "] state = " << static_cast<uint32_t>(dcs->state()) << std::endl;
+      std::for_each(dcs->requests().begin(),dcs->requests().end(),[](const LoadRequest& request){
+        std::cout << "xgbtck coalesce request offset = " << request.region.offset << " length = " << request.region.length << std::endl;
       });
 
       if (load->state() == CoalescedLoad::State::kPlanned) {

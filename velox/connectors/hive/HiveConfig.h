@@ -137,9 +137,14 @@ class HiveConfig {
   // set the preload rowgroup number.
   static constexpr const char* kPrefetchRowGroups = "refetch_rowgroups";
 
-  // set the preload rowgroup number.
+  // set the coalesce distance
   static constexpr const char* kMaxCoalesceDistance = "max_coalesce_distance";
 
+  // set the LoadQuantum
+  static constexpr const char* kLoadQuantum = "load_quantum";
+
+  // set the coalesce Bytes
+  static constexpr const char* kCoalesceBytes = "coalesce_bytes";
 
   static InsertExistingPartitionsBehavior insertExistingPartitionsBehavior(
       const Config* config);
