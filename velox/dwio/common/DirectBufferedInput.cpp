@@ -135,6 +135,12 @@ void DirectBufferedInput::makeLoads(
   // is correlated.
   const auto maxCoalesceBytes =
       shouldPrefetch ? options_.maxCoalesceBytes() : loadQuantum;
+  std::for_each(requests.begin(),
+      requests.end(),
+      [&](LoadRequest* request) {
+        std::cout << "xgbtck request offset = " << request->region.offset << " length = " << request->region.length << std::endl;
+      }
+      );
   std::sort(
       requests.begin(),
       requests.end(),
@@ -182,6 +188,13 @@ void DirectBufferedInput::makeLoads(
   if (shouldPrefetch && executor_) {
     for (auto i = 0; i < coalescedLoads_.size(); ++i) {
       auto& load = coalescedLoads_[i];
+      DirectCoalescedLoad* dcs = dynamic_cast<DirectCoalescedLoad*>(load.get());
+
+      std::cout << "xgbtck coalescedLoads[" << i << "] state = " << dcs->state() << std::endl;
+      std::for_each(dcs->requests().begin(),dcs->requests().end(),[&](LoadRequest* request){
+        std::cout << "xgbtck coalesce request offset = " << request->region.offset << " length = " << request->region.length << std::endl;
+      });
+
       if (load->state() == CoalescedLoad::State::kPlanned) {
         executor_->add([pendingLoad = load]() {
           process::TraceContext trace("Read Ahead");
