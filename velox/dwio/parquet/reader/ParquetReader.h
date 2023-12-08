@@ -80,7 +80,7 @@ class ParquetRowReader : public dwio::common::RowReader {
 
   // Positions the reader tre at the start of the next row group, as determined
   // by filterRowGroups().
-  bool advanceToNextRowGroup();
+  bool advanceToNextRowGroup(bool skipPrefetch);
 
   memory::MemoryPool& pool_;
   const std::shared_ptr<ReaderBase> readerBase_;

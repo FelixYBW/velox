@@ -73,7 +73,8 @@ class ReaderBase {
   void scheduleRowGroups(
       const std::vector<uint32_t>& groups,
       int32_t currentGroup,
-      StructColumnReader& reader);
+      StructColumnReader& reader,
+      bool skipPrefetch);
 
   /// Returns the uncompressed size for columns in 'type' and its children in
   /// row group.
@@ -616,9 +617,10 @@ std::shared_ptr<const dwio::common::TypeWithId> ReaderBase::createTypeWithId(
 void ReaderBase::scheduleRowGroups(
     const std::vector<uint32_t>& rowGroupIds,
     int32_t currentGroup,
-    StructColumnReader& reader) {
+    StructColumnReader& reader,
+    bool skipPrefetch) {
   uint64_t usec = 0;
-  auto numRowGroupsToLoad = std::min(
+  auto numRowGroupsToLoad = skipPrefetch? 1: std::min(
       options_.prefetchRowGroups() + 1,
       static_cast<int64_t>(rowGroupIds.size() - currentGroup));
   for (auto i = 0; i < numRowGroupsToLoad; i++) {
@@ -701,7 +703,7 @@ ParquetRowReader::ParquetRowReader(
     // schedule prefetch of first row group right after reading the metadata.
     // This is usually on a split preload thread before the split goes to table
     // scan.
-    advanceToNextRowGroup();
+    advanceToNextRowGroup(/*skipPrefetch=*/true);
   }
 }
 
@@ -746,7 +748,7 @@ void ParquetRowReader::filterRowGroups() {
 
 int64_t ParquetRowReader::nextRowNumber() {
   if (currentRowInGroup_ >= rowsInCurrentRowGroup_ &&
-      !advanceToNextRowGroup()) {
+      !advanceToNextRowGroup(false)) {
     return kAtEnd;
   }
   return firstRowOfRowGroup_[nextRowGroupIdsIdx_ - 1] + currentRowInGroup_;
@@ -775,7 +777,7 @@ uint64_t ParquetRowReader::next(
   return rowsToRead;
 }
 
-bool ParquetRowReader::advanceToNextRowGroup() {
+bool ParquetRowReader::advanceToNextRowGroup(bool skipPrefetch) {
 
   auto start = std::chrono::system_clock::now();
   auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -795,7 +797,8 @@ bool ParquetRowReader::advanceToNextRowGroup() {
   readerBase_->scheduleRowGroups(
       rowGroupIds_,
       nextRowGroupIdsIdx_,
-      static_cast<StructColumnReader&>(*columnReader_));
+      static_cast<StructColumnReader&>(*columnReader_),
+      skipPrefetch);
   currentRowGroupPtr_ = &rowGroups_[rowGroupIds_[nextRowGroupIdsIdx_]];
   rowsInCurrentRowGroup_ = currentRowGroupPtr_->num_rows;
   currentRowInGroup_ = 0;
