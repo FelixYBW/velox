@@ -246,6 +246,7 @@ void appendRanges(
     const uint64_t bytes = memory::AllocationTraits::pageBytes(run.numPages());
     const uint64_t readSize = std::min(bytes, length - offsetInRuns);
     buffers.push_back(folly::Range<char*>(run.data<char>(), readSize));
+    std::cout << " xgbtck appendRange push buffers offset = " << run.data<char>() << " length = " << readSize << std::endl;
     offsetInRuns += readSize;
   }
 }
@@ -264,6 +265,8 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool isPrefetch) {
           reinterpret_cast<char*>(
               static_cast<uint64_t>(region.offset - lastEnd))));
       overread += buffers.back().size();
+      std::cout << "xgbtck overread = " << overread << " region.offset = " << region.offset << " lastEnd = " << lastEnd << std::endl;
+      std::cout << "xgbtck pushbuffer offset = 0 size = " << static_cast<uint64_t>(region.offset - lastEnd) << std::endl;
     }
     if (region.length > DirectBufferedInput::kTinySize) {
       if (&request != &requests_.back()) {
@@ -271,8 +274,10 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool isPrefetch) {
         // within the max distance. Coalesces and allows reading the region of
         // max quantum + max distance in one piece.
         request.loadSize = region.length;
+        std::cout << "xgbtck request isn't last request, loadSize = " << request.loadSize << " offset = " << request.region.offset << std::endl;
       } else {
         request.loadSize = std::min<int32_t>(region.length, loadQuantum_);
+        std::cout << "xgbtck request is last request, loadSize = " << request.loadSize << " offset = " << request.region.offset << " loadquantum = " << loadQuantum_ << std::endl;
       }
       auto numPages = memory::AllocationTraits::numPages(request.loadSize);
       pool_.allocateNonContiguous(numPages, request.data);
@@ -281,6 +286,8 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool isPrefetch) {
       request.loadSize = region.length;
       request.tinyData.resize(region.length);
       buffers.push_back(folly::Range(request.tinyData.data(), region.length));
+      std::cout << "xgbtck, tiny size, load size = " << request.loadSize << " offset = " << request.region.offset << std::endl;
+      std::cout << "xgbtck pushbuffer offset = " << request.tinyData.data() << " size = " << region.length << std::endl;
     }
     lastEnd = region.offset + request.loadSize;
     size += std::min<int32_t>(loadQuantum_, region.length);

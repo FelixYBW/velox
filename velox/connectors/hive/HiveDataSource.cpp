@@ -375,6 +375,9 @@ HiveDataSource::HiveDataSource(
       executor_(executor),
       parallelLoadEnable_(parallelLoadEnable),
       executor2_(executor2) {
+
+  std::cout << "xgbtck data source; options loadquantum = " << readerOpts_.getLoadQuantum() << " coalescebytes = " << readerOpts_.getMaxCoalesceBytes() << std::endl;
+
   // Column handled keyed on the column alias, the name used in the query.
   for (const auto& [canonicalizedName, columnHandle] : columnHandles) {
     auto handle = std::dynamic_pointer_cast<HiveColumnHandle>(columnHandle);
@@ -558,6 +561,7 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
     parseSerdeParameters(split_->serdeParameters);
     readerOpts_.setFileFormat(split_->fileFormat);
   }
+
 
   auto fileHandle = fileHandleFactory_->generate(split_->filePath).second;
   auto input = createBufferedInput(*fileHandle, readerOpts_);
@@ -824,6 +828,8 @@ HiveDataSource::createBufferedInput(
         executor2_,
         readerOpts_.loadQuantum());
   }
+  std::cout << "xgbtck data source; options loadquantum = " << readerOpts.getLoadQuantum() << " coalescebytes = " << readerOpts.getMaxCoalesceBytes() << std::endl;
+
   return std::make_unique<dwio::common::DirectBufferedInput>(
       fileHandle.file,
       dwio::common::MetricsLog::voidLog(),
