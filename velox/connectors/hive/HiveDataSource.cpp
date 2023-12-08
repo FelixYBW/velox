@@ -376,7 +376,7 @@ HiveDataSource::HiveDataSource(
       parallelLoadEnable_(parallelLoadEnable),
       executor2_(executor2) {
 
-  std::cout << "xgbtck data source; options loadquantum = " << readerOpts_.getLoadQuantum() << " coalescebytes = " << readerOpts_.getMaxCoalesceBytes() << std::endl;
+  std::cout << "xgbtck data source; options loadquantum = " << readerOpts_.loadQuantum() << " coalescebytes = " << readerOpts_.maxCoalesceBytes() << std::endl;
 
   // Column handled keyed on the column alias, the name used in the query.
   for (const auto& [canonicalizedName, columnHandle] : columnHandles) {
@@ -828,7 +828,7 @@ HiveDataSource::createBufferedInput(
         executor2_,
         readerOpts_.loadQuantum());
   }
-  std::cout << "xgbtck data source; options loadquantum = " << readerOpts.getLoadQuantum() << " coalescebytes = " << readerOpts.getMaxCoalesceBytes() << std::endl;
+  std::cout << "xgbtck create connector; options loadquantum = " << readerOpts.loadQuantum() << " coalescebytes = " << readerOpts.maxCoalesceBytes() << std::endl;
 
   return std::make_unique<dwio::common::DirectBufferedInput>(
       fileHandle.file,

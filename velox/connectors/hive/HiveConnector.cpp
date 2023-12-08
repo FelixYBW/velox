@@ -119,7 +119,7 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
   options.setMaxCoalesceBytes(connectorProperties()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kCoalesceBytes,
       velox::dwio::common::ReaderOptions::kDefaultCoalesceBytes));
-  std::cout << "xgbtck hive connector create data source; options loadquantum = " << options.getLoadQuantum() << " coalescebytes = " << options.getMaxCoalesceBytes() << std::endl;
+  std::cout << "xgbtck hive connector create data source; options loadquantum = " << options.loadQuantum() << " coalescebytes = " << options.maxCoalesceBytes() << std::endl;
   return std::make_unique<HiveDataSource>(
       outputType,
       tableHandle,
