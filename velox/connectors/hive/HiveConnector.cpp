@@ -83,7 +83,13 @@ HiveConnector::HiveConnector(
               << " created with file handle cache disabled";
   }
 }
-
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+}
 std::unique_ptr<DataSource> HiveConnector::createDataSource(
     const RowTypePtr& outputType,
     const std::shared_ptr<ConnectorTableHandle>& tableHandle,
@@ -114,8 +120,6 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
       velox::connector::hive::HiveConfig::kCoalesceBytes,
       velox::dwio::common::ReaderOptions::kDefaultCoalesceBytes));
   
-  print_stacktrace();
-
   return std::make_unique<HiveDataSource>(
       outputType,
       tableHandle,
