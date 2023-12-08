@@ -42,6 +42,8 @@
 
 #include <boost/lexical_cast.hpp>
 #include <memory>
+#include <execinfo.h> /* backtrace, backtrace_symbols_fd */
+#include <unistd.h> /* STDOUT_FILENO */
 
 using namespace facebook::velox::exec;
 using namespace facebook::velox::dwrf;
@@ -105,12 +107,14 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
   options.setMaxCoalesceDistance(connectorProperties()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kMaxCoalesceDistance,
       velox::dwio::common::ReaderOptions::kDefaultCoalesceDistance));            
-  options.setPrefetchRowGroups(connectorProperties()->get<uint32_t>(
+  options.setLoadQuantum(connectorProperties()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kLoadQuantum,
       velox::dwio::common::ReaderOptions::kDefaultLoadQuantum));
-  options.setMaxCoalesceDistance(connectorProperties()->get<uint32_t>(
+  options.setMaxCoalesceBytes(connectorProperties()->get<uint32_t>(
       velox::connector::hive::HiveConfig::kCoalesceBytes,
       velox::dwio::common::ReaderOptions::kDefaultCoalesceBytes));
+  
+  print_stacktrace();
 
   return std::make_unique<HiveDataSource>(
       outputType,
