@@ -156,8 +156,8 @@ void DirectBufferedInput::makeLoads(
       maxDistance,
       // Break batches up. Better load more short ones i parallel.
       1000, // limit coalesce by size, not count.
-      [&](int32_t index) { return requests[index]->region.offset; },
-      [&](int32_t index) -> int32_t {
+      /*offsetFunc*/ [&](int32_t index) { return requests[index]->region.offset; },
+      /*sizeFunc*/ [&](int32_t index) -> int32_t {
         auto size = requests[index]->region.length;
         if (size > loadQuantum) {
           coalescedBytes += loadQuantum;
@@ -166,18 +166,18 @@ void DirectBufferedInput::makeLoads(
         coalescedBytes += size;
         return size;
       },
-      [&](int32_t index) {
+      /*numRanges*/[&](int32_t index) {
         if (coalescedBytes > maxCoalesceBytes) {
           coalescedBytes = 0;
           return kNoCoalesce;
         }
         return 1;
       },
-      [&](LoadRequest* request, std::vector<LoadRequest*>& ranges) {
+      /*addRanges*/[&](LoadRequest* request, std::vector<LoadRequest*>& ranges) {
         ranges.push_back(request);
       },
-      [&](int32_t /*gap*/, std::vector<LoadRequest*> /*ranges*/) { /*no op*/ },
-      [&](const std::vector<LoadRequest*>& /*requests*/,
+      /*skipRange*/[&](int32_t /*gap*/, std::vector<LoadRequest*> /*ranges*/) { /*no op*/ },
+      /*ioFunc*/[&](const std::vector<LoadRequest*>& /*requests*/,
           int32_t /*begin*/,
           int32_t /*end*/,
           uint64_t /*offset*/,
@@ -246,7 +246,7 @@ void appendRanges(
     const uint64_t bytes = memory::AllocationTraits::pageBytes(run.numPages());
     const uint64_t readSize = std::min(bytes, length - offsetInRuns);
     buffers.push_back(folly::Range<char*>(run.data<char>(), readSize));
-    std::cout << " xgbtck appendRange push buffers offset = " << run.data<char>() << " length = " << readSize << std::endl;
+    std::cout << " xgbtck appendRange push buffers length = " << readSize << std::endl;
     offsetInRuns += readSize;
   }
 }
@@ -292,7 +292,11 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool isPrefetch) {
     lastEnd = region.offset + request.loadSize;
     size += std::min<int32_t>(loadQuantum_, region.length);
   }
+  std::for_each(buffers.begin(), buffers.end(), [](const folly::Range<char*>& buffer) {
+    std::cout << "xgbtck buffer size = " << buffer.size() << std::endl;
+  });
   input_->read(buffers, requests_[0].region.offset, LogType::FILE);
+  
   ioStats_->read().increment(size);
   ioStats_->incRawOverreadBytes(overread);
   if (isPrefetch) {
