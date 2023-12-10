@@ -162,6 +162,16 @@ int32_t HiveConfig::maxCoalescedDistanceBytes(const Config* config) {
 }
 
 // static.
+int32_t HiveConfig::prefetchRowGroups(const Config* config){
+  return config->get<int32_t>(kPrefetchRowGroups, 1);
+}
+
+// static.
+int32_t HiveConfig::loadQuantum(const Config* config){
+  return config->get<int32_t>(kLoadQuantum, 8 << 20);
+}
+
+// static.
 int32_t HiveConfig::numCacheFileHandles(const Config* config) {
   return config->get<int32_t>(kNumCacheFileHandles, 20'000);
 }

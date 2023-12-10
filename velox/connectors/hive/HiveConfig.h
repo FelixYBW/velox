@@ -104,6 +104,12 @@ class HiveConfig {
   static constexpr const char* kMaxCoalescedDistanceBytes =
       "max-coalesced-distance-bytes";
 
+  /// Sets the number of prefetch rowgroups
+  static constexpr const char* kPrefetchRowGroups = "prefetch-rowgroups";
+
+  /// Sets the load quantum size for a request.
+  static constexpr const char* kLoadQuantum = "load_quantum";
+
   /// Maximum number of entries in the file handle cache.
   static constexpr const char* kNumCacheFileHandles = "num_cached_file_handles";
 
@@ -165,6 +171,10 @@ class HiveConfig {
   static int64_t maxCoalescedBytes(const Config* config);
 
   static int32_t maxCoalescedDistanceBytes(const Config* config);
+
+  static int32_t prefetchRowGroups(const Config* config);
+
+  static int32_t loadQuantum(const Config* config);
 
   static int32_t numCacheFileHandles(const Config* config);
 
