@@ -104,12 +104,26 @@ class HiveConfig {
   static constexpr const char* kMaxCoalescedDistanceBytes =
       "max-coalesced-distance-bytes";
 
+  /// Sets the number of prefetch rowgroups
+  static constexpr const char* kPrefetchRowGroups = "prefetch-rowgroups";
+
+  /// Sets the load quantum size for a request.
+  static constexpr const char* kLoadQuantum = "load_quantum";
+
   /// Maximum number of entries in the file handle cache.
   static constexpr const char* kNumCacheFileHandles = "num_cached_file_handles";
 
   /// Enable file handle cache.
   static constexpr const char* kEnableFileHandleCache =
       "file_handle_cache_enabled";
+
+  /// set directorySizeGuess defined in dwio::common::ReaderOptions
+  static constexpr const char* kDirectorySizeGuess =
+      "directory_size_guess";
+
+  /// set FilePreloadThreshold defined in dwio::common::ReaderOptions
+  static constexpr const char* kFilePreloadThreshold =
+      "file_preload_threshold";
 
   // TODO: Refactor and merge config and session property.
   static constexpr const char* kOrcWriterMaxStripeSize =
@@ -170,6 +184,10 @@ class HiveConfig {
 
   static int32_t maxCoalescedDistanceBytes(const Config* config);
 
+  static int32_t prefetchRowGroups(const Config* config);
+
+  static int32_t loadQuantum(const Config* config);
+
   static int32_t numCacheFileHandles(const Config* config);
 
   static bool isFileHandleCacheEnabled(const Config* config);
@@ -191,6 +209,10 @@ class HiveConfig {
   static uint64_t getOrcWriterMaxDictionaryMemory(
       const Config* connectorQueryCtxConfig,
       const Config* connectorPropertiesConfig);
+
+  static uint64_t directorySizeGuess(const Config* config);
+
+  static uint64_t filePreloadThreshold(const Config* config);
 };
 
 } // namespace facebook::velox::connector::hive

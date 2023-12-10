@@ -92,11 +92,19 @@ std::unique_ptr<DataSource> HiveConnector::createDataSource(
       HiveConfig::maxCoalescedBytes(connectorQueryCtx->config()));
   options.setMaxCoalesceDistance(
       HiveConfig::maxCoalescedDistanceBytes(connectorQueryCtx->config()));
+  options.setPrefetchRowGroups(
+      HiveConfig::prefetchRowGroups(connectorQueryCtx->config()));
+  options.setLoadQuantum(
+      HiveConfig::loadQuantum(connectorQueryCtx->config()));
   options.setFileColumnNamesReadAsLowerCase(
       HiveConfig::isFileColumnNamesReadAsLowerCase(
           connectorQueryCtx->config()));
   options.setUseColumnNamesForColumnMapping(
       HiveConfig::isOrcUseColumnNames(connectorQueryCtx->config()));
+  options.setDirectorySizeGuess(
+      HiveConfig::directorySizeGuess(connectorQueryCtx->config()));
+  options.setFilePreloadThreshold(
+      HiveConfig::filePreloadThreshold(connectorQueryCtx->config()));
 
   return std::make_unique<HiveDataSource>(
       outputType,

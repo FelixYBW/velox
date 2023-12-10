@@ -162,6 +162,16 @@ int32_t HiveConfig::maxCoalescedDistanceBytes(const Config* config) {
 }
 
 // static.
+int32_t HiveConfig::prefetchRowGroups(const Config* config){
+  return config->get<int32_t>(kPrefetchRowGroups, 1);
+}
+
+// static.
+int32_t HiveConfig::loadQuantum(const Config* config){
+  return config->get<int32_t>(kLoadQuantum, 8 << 20);
+}
+
+// static.
 int32_t HiveConfig::numCacheFileHandles(const Config* config) {
   return config->get<int32_t>(kNumCacheFileHandles, 20'000);
 }
@@ -227,6 +237,16 @@ uint64_t HiveConfig::getOrcWriterMaxDictionaryMemory(
         core::CapacityUnit::BYTE);
   }
   return 16L * 1024L * 1024L;
+}
+
+// static
+uint64_t HiveConfig::directorySizeGuess(const Config* config){
+  return config->get<uint64_t>(kDirectorySizeGuess, 1UL << 20);
+}
+
+// static
+uint64_t HiveConfig::filePreloadThreshold(const Config* config){
+  return config->get<uint64_t>(kFilePreloadThreshold, 8UL << 20);
 }
 
 } // namespace facebook::velox::connector::hive
