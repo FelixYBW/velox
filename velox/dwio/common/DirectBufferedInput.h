@@ -123,7 +123,13 @@ class DirectBufferedInput : public BufferedInput {
         ioStats_(std::move(ioStats)),
         executor_(executor),
         fileSize_(input_->getLength()),
-        options_(readerOptions) {}
+        options_(readerOptions) {
+          std::cout << "DirectBufferedInput load_quantum - " << options_.loadQuantum()
+                    << " coalesce distance = " << options_.maxCoalesceDistance()
+                    << " coalesce size = " << options_.maxCoalesceBytes()
+                    << " prefetch rowgroup = " << options_.prefetchRowGroups()
+                    << std::endl;
+        }
 
   ~DirectBufferedInput() override {
     for (auto& load : coalescedLoads_) {
