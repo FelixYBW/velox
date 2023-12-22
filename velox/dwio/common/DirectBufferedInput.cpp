@@ -262,7 +262,9 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool isPrefetch) {
         request.loadSize = std::min<int32_t>(region.length, loadQuantum_);
       }
       auto numPages = memory::AllocationTraits::numPages(request.loadSize);
+      std::cout << "xgbtck memory allocate from directcoalesceload thread = " << std::this_thread::get_id() << " size = " << request.loadSize << std::endl;
       pool_.allocateNonContiguous(numPages, request.data);
+
       appendRanges(request.data, request.loadSize, buffers);
     } else {
       request.loadSize = region.length;
