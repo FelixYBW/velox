@@ -16,6 +16,7 @@
 
 #include "velox/common/memory/MallocAllocator.h"
 #include "velox/common/memory/Memory.h"
+#include <thread>
 
 #include <sys/mman.h>
 
@@ -28,6 +29,8 @@ bool MallocAllocator::allocateNonContiguousWithoutRetry(
     Allocation& out,
     ReservationCallback reservationCB,
     MachinePageCount minSizeClass) {
+
+  std::cout << "xgbtck allocateNonContiguousWithoutRetry thread = " << std::this_thread::get_id() << " pages = " << numPages << " Allocation = " << &out << std::endl;
   const uint64_t freedBytes = freeNonContiguous(out);
   if (numPages == 0) {
     if (freedBytes != 0 && reservationCB != nullptr) {
@@ -129,6 +132,9 @@ bool MallocAllocator::allocateContiguousWithoutRetry(
     ContiguousAllocation& allocation,
     ReservationCallback reservationCB,
     MachinePageCount maxPages) {
+
+    std::cout << "xgbtck allocateContiguousWithoutRetry thread = " << std::this_thread::get_id() << " pages = " << numPages << " Allocation = " << collateral << std::endl;
+
   bool result;
   stats_.recordAllocate(AllocationTraits::pageBytes(numPages), 1, [&]() {
     result = allocateContiguousImpl(
@@ -219,6 +225,9 @@ bool MallocAllocator::allocateContiguousImpl(
 }
 
 int64_t MallocAllocator::freeNonContiguous(Allocation& allocation) {
+
+  std::cout << "xgbtck freeNonContiguous thread = " << std::this_thread::get_id() << " Allocation = " << &allocation << std::endl;
+
   if (allocation.empty()) {
     return 0;
   }
@@ -249,6 +258,9 @@ int64_t MallocAllocator::freeNonContiguous(Allocation& allocation) {
 }
 
 void MallocAllocator::freeContiguous(ContiguousAllocation& allocation) {
+
+  std::cout << "xgbtck freeContiguous thread = " << std::this_thread::get_id() << " Allocation = " << &allocation << std::endl;
+
   stats_.recordFree(
       allocation.size(), [&]() { freeContiguousImpl(allocation); });
 }
@@ -275,6 +287,9 @@ bool MallocAllocator::growContiguousWithoutRetry(
     MachinePageCount increment,
     ContiguousAllocation& allocation,
     ReservationCallback reservationCB) {
+
+    std::cout << "xgbtck growContiguousWithoutRetry thread = " << std::this_thread::get_id() << " pages = " << increment << " Allocation = " << &allocation << std::endl;
+
   VELOX_CHECK_LE(
       allocation.size() + increment * AllocationTraits::kPageSize,
       allocation.maxSize());
@@ -308,6 +323,10 @@ bool MallocAllocator::growContiguousWithoutRetry(
 void* MallocAllocator::allocateBytesWithoutRetry(
     uint64_t bytes,
     uint16_t alignment) {
+
+
+
+
   if (!incrementUsage(bytes)) {
     return nullptr;
   }
@@ -324,6 +343,8 @@ void* MallocAllocator::allocateBytesWithoutRetry(
     VELOX_MEM_LOG(ERROR) << "Failed to allocateBytes " << succinctBytes(bytes)
                          << " with " << alignment << " alignment";
   }
+
+  std::cout << "xgbtck allocateBytesWithoutRetry thread = " << std::this_thread::get_id() << " bytes = " << bytes << " result = " << result << std::endl;
   return result;
 }
 
@@ -336,10 +357,15 @@ void* MallocAllocator::allocateZeroFilledWithoutRetry(uint64_t bytes) {
     VELOX_MEM_LOG(ERROR) << "Failed to allocateZeroFilled "
                          << succinctBytes(bytes);
   }
+   std::cout << "xgbtck allocateZeroFilledWithoutRetry thread = " << std::this_thread::get_id() << " bytes = " << bytes << " result = " << result << std::endl;
+
   return result;
 }
 
 void MallocAllocator::freeBytes(void* p, uint64_t bytes) noexcept {
+
+ std::cout << "xgbtck freeBytes thread = " << std::this_thread::get_id() << " bytes = " << bytes << " result = " << p << std::endl;
+  
   ::free(p); // NOLINT
   decrementUsage(bytes);
 }

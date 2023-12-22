@@ -18,6 +18,7 @@
 
 #include <signal.h>
 #include <set>
+#include <thread>
 
 #include "velox/common/base/SuccinctPrinter.h"
 #include "velox/common/memory/Memory.h"
@@ -394,6 +395,7 @@ MemoryPoolImpl::~MemoryPoolImpl() {
   if (parent_ != nullptr) {
     toImpl(parent_)->dropChild(this);
   }
+  std::cout << "xgbtck release memory pool thread = " << std::this_thread::get_id() << " reservationBytes = " << reservationBytes_ << " usedReservationBytes = " << usedReservationBytes_ << " minReservationBytes_ = " << minReservationBytes_ << std::endl;
   if (checkUsageLeak_) {
     VELOX_CHECK(
         (usedReservationBytes_ == 0) && (reservationBytes_ == 0) &&
