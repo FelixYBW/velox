@@ -20,6 +20,7 @@
 #include <set>
 #include <thread>
 #include <iostream>
+#include <execinfo.h>
 
 #include "velox/common/base/SuccinctPrinter.h"
 #include "velox/common/memory/Memory.h"
@@ -390,6 +391,15 @@ MemoryPoolImpl::MemoryPoolImpl(
       name_,
       parent_->name());
 }
+inline void backtrace() {
+  void* array[1024];
+  auto size = backtrace(array, 1024);
+  char** strings = backtrace_symbols(array, size);
+  for (size_t i = 0; i < size; ++i) {
+    std::cout << strings[i] << std::endl;
+  }
+  free(strings);
+}
 
 MemoryPoolImpl::~MemoryPoolImpl() {
   DEBUG_LEAK_CHECK();
@@ -397,6 +407,7 @@ MemoryPoolImpl::~MemoryPoolImpl() {
     toImpl(parent_)->dropChild(this);
   }
   std::cout << "xgbtck release memory pool thread = " << std::this_thread::get_id() << " reservationBytes = " << reservationBytes_ << " usedReservationBytes = " << usedReservationBytes_ << " minReservationBytes_ = " << minReservationBytes_ << std::endl;
+  backtrace();
   if (checkUsageLeak_) {
     VELOX_CHECK(
         (usedReservationBytes_ == 0) && (reservationBytes_ == 0) &&
