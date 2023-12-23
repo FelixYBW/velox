@@ -19,6 +19,7 @@
 #include <signal.h>
 #include <set>
 #include <thread>
+#include <iostream>
 
 #include "velox/common/base/SuccinctPrinter.h"
 #include "velox/common/memory/Memory.h"
