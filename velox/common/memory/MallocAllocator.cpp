@@ -150,16 +150,6 @@ bool MallocAllocator::allocateContiguousWithoutRetry(
   return result;
 }
 
-inline void backtrace() {
-  void* array[1024];
-  auto size = backtrace(array, 1024);
-  char** strings = backtrace_symbols(array, size);
-  for (size_t i = 0; i < size; ++i) {
-    std::cout << strings[i] << std::endl;
-  }
-  free(strings);
-}
-
 bool MallocAllocator::allocateContiguousImpl(
     MachinePageCount numPages,
     Allocation* collateral,
@@ -246,7 +236,7 @@ int64_t MallocAllocator::freeNonContiguous(Allocation& allocation) {
   if (std::this_thread::get_id()!=mainthreadId)
   {
     std::cout << "xgbtck freeNonContiguous thread = " << std::this_thread::get_id() << " pointer = " << &allocation << std::endl;
-    backtrace();
+    print_stacktrace();
   }
   if (allocation.empty()) {
     return 0;

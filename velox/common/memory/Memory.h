@@ -270,4 +270,7 @@ FOLLY_ALWAYS_INLINE int32_t alignmentPadding(void* address, int32_t alignment) {
   auto extra = reinterpret_cast<uintptr_t>(address) % alignment;
   return extra == 0 ? 0 : alignment - extra;
 }
+
+void print_stacktrace(void);
+
 } // namespace facebook::velox::memory
