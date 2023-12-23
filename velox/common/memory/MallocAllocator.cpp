@@ -25,7 +25,9 @@
 extern std::thread::id iothreadId;
 std::thread::id mainthreadId;
 
+
 namespace facebook::velox::memory {
+
 MallocAllocator::MallocAllocator(size_t capacity)
     : kind_(MemoryAllocator::Kind::kMalloc), capacity_(capacity) {}
 
@@ -38,6 +40,9 @@ bool MallocAllocator::allocateNonContiguousWithoutRetry(
   if (std::this_thread::get_id()!=mainthreadId) 
     std::cout << "xgbtck allocateNonContiguousWithoutRetry thread = " << std::this_thread::get_id() << " pages = " << numPages << " pointer = " << &out << std::endl;
   const uint64_t freedBytes = freeNonContiguous(out);
+
+  io_allocations_.push_back(&out);
+
   if (numPages == 0) {
     if (freedBytes != 0 && reservationCB != nullptr) {
       reservationCB(freedBytes, false);
@@ -233,7 +238,7 @@ bool MallocAllocator::allocateContiguousImpl(
 
 int64_t MallocAllocator::freeNonContiguous(Allocation& allocation) {
 
-  if (std::this_thread::get_id()!=mainthreadId)
+  if (std::find(io_allocations_.begin(), io_allocations_.end(), &allocation)!= io_allocations_.end())
   {
     std::cout << "xgbtck freeNonContiguous thread = " << std::this_thread::get_id() << " pointer = " << &allocation << std::endl;
     print_stacktrace();

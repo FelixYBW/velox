@@ -165,5 +165,8 @@ class MallocAllocator : public MemoryAllocator {
   std::unordered_set<void*> mallocs_;
 
   std::shared_ptr<Cache> cache_;
+
+  std::vector<Allocation*> io_allocations_;
+
 };
 } // namespace facebook::velox::memory
