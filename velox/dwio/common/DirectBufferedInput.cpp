@@ -185,7 +185,7 @@ void DirectBufferedInput::makeLoads(
     for (auto i = 0; i < coalescedLoads_.size(); ++i) {
       auto& load = coalescedLoads_[i];
       if (load->state() == CoalescedLoad::State::kPlanned) {
-        executor_->add([pendingLoad = load]() {
+        executor_->add([&pendingLoad = load]() {
           process::TraceContext trace("Read Ahead");
           if (FLAGS_memory_manager_destructed)
           {
