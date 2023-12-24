@@ -232,7 +232,7 @@ int64_t MallocAllocator::freeNonContiguous(Allocation& allocation) {
 
   if (FLAGS_memory_manager_destructed)
   {
-    std::cout << "xgbtck freeNonContiguous thread = " << std::this_thread::get_id() << " pointer = " << &allocation << std::endl;
+    std::cout << "xgbtck freeNonContiguous thread = " << std::this_thread::get_id() << " pool = " << allocation.pool() << " size = " << allocation.byteSize() << std::endl;
     print_stacktrace();
   }
   if (allocation.empty()) {
@@ -268,7 +268,7 @@ void MallocAllocator::freeContiguous(ContiguousAllocation& allocation) {
 
   if (FLAGS_memory_manager_destructed)
   {
-    std::cout << "xgbtck freeContiguous thread = " << std::this_thread::get_id() << " pointer = " << &allocation << std::endl;
+    std::cout << "xgbtck freeContiguous thread = " << std::this_thread::get_id() << " pool = " << allocation.pool() << " size = " << allocation.size() << std::endl;
     print_stacktrace();
   }
   stats_.recordFree(
@@ -370,7 +370,7 @@ void* MallocAllocator::allocateZeroFilledWithoutRetry(uint64_t bytes) {
 void MallocAllocator::freeBytes(void* p, uint64_t bytes) noexcept {
 
   if (FLAGS_memory_manager_destructed){
-    std::cout << "xgbtck freeBytes thread = " << std::this_thread::get_id() << " bytes = " << bytes << " pointer = " << p << std::endl;
+    std::cout << "xgbtck freeBytes thread = " << std::this_thread::get_id() << " bytes = " << bytes << std::endl;
     print_stacktrace();
   }
   ::free(p); // NOLINT
