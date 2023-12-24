@@ -18,8 +18,10 @@
 #include "velox/common/memory/Allocation.h"
 #include "velox/common/process/TraceContext.h"
 #include "velox/dwio/common/DirectInputStream.h"
+#include <gflags/gflags.h>
 
 DECLARE_int32(cache_prefetch_min_pct);
+DECLARE_bool(memory_manager_destructed);
 
 using ::facebook::velox::common::Region;
 
@@ -185,7 +187,15 @@ void DirectBufferedInput::makeLoads(
       if (load->state() == CoalescedLoad::State::kPlanned) {
         executor_->add([pendingLoad = load]() {
           process::TraceContext trace("Read Ahead");
+          if (FLAGS_memory_manager_destructed)
+          {
+            std::cout << "xgbtck coalesceload loadorfuture threadid = " << std::this_thread::get_id() << std::endl;
+          }
           pendingLoad->loadOrFuture(nullptr);
+          if (FLAGS_memory_manager_destructed)
+          {
+            std::cout << "xgbtck executor coalesce function returned threadid = " << std::this_thread::get_id() << std::endl;
+          }
         });
       }
     }
