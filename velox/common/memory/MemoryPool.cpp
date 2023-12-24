@@ -406,7 +406,7 @@ MemoryPoolImpl::~MemoryPoolImpl() {
     toImpl(parent_)->dropChild(this);
   }
   std::cout << "xgbtck release memory pool thread = " << std::this_thread::get_id() << " reservationBytes = " << reservationBytes_ << " usedReservationBytes = " << usedReservationBytes_ << " minReservationBytes_ = " << minReservationBytes_ << std::endl;
-  print_stacktrace();
+  //print_stacktrace();
   if (checkUsageLeak_) {
     VELOX_CHECK(
         (usedReservationBytes_ == 0) && (reservationBytes_ == 0) &&
