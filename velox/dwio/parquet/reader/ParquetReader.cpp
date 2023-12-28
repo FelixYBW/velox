@@ -620,7 +620,7 @@ void ReaderBase::scheduleRowGroups(
   for (auto i = 0; i < numRowGroupsToLoad; i++) {
     auto thisGroup = rowGroupIds[currentGroup + i];
     if (!inputs_[thisGroup]) {
-      std::cout << " xgbtck schedule row group " << << thisGroup << std::endl;
+      std::cout << " xgbtck schedule row group " << thisGroup << std::endl;
       inputs_[thisGroup] = reader.loadRowGroup(thisGroup, input_);
     }
   }
@@ -732,6 +732,7 @@ void ParquetRowReader::filterRowGroups() {
         ++skippedRowGroups_;
       } else {
         rowGroupIds_.push_back(i);
+        std::cout << " xgbtck enqueue row group " << i << " start = " << fileOffset << " option.offset = " <<  options_.getOffset() << " option.limit = " << options_.getLimit() << std::endl;
         firstRowOfRowGroup_.push_back(rowNumber);
       }
     }

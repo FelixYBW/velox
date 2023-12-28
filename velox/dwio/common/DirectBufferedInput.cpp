@@ -35,7 +35,7 @@ std::unique_ptr<SeekableInputStream> DirectBufferedInput::enqueue(
     Region region,
     const StreamIdentifier* sid = nullptr) {
 
-  std::cout << "xgbtck enqueue input start offset = " << region.offset << " stop offset  = " (region.offset + region.length) << std::endl;
+  std::cout << "xgbtck enqueue input start offset = " << region.offset << " stop offset  = " << (region.offset + region.length) << std::endl;
   if (!coalescedLoads_.empty()) {
     // Results of previous load are no more available here.
     coalescedLoads_.clear();
