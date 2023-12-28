@@ -172,6 +172,7 @@ class S3ReadFile final : public ReadFile {
     request.SetRange(awsString(ss.str()));
     request.SetResponseStreamFactory(
         AwsWriteableStreamFactory(position, length));
+    std::cout << "xgbtck load file " << getName() << " offset = " << offset << " end = " << offset + length << std::endl;
     auto outcome = client_->GetObject(request);
     VELOX_CHECK_AWS_OUTCOME(outcome, "Failed to get S3 object", bucket_, key_);
   }

@@ -34,6 +34,8 @@ using cache::TrackingId;
 std::unique_ptr<SeekableInputStream> DirectBufferedInput::enqueue(
     Region region,
     const StreamIdentifier* sid = nullptr) {
+
+  std::cout << "xgbtck enqueue input start offset = " << region.offset << " stop offset  = " (region.offset + region.length) << std::endl;
   if (!coalescedLoads_.empty()) {
     // Results of previous load are no more available here.
     coalescedLoads_.clear();
@@ -185,7 +187,7 @@ void DirectBufferedInput::makeLoads(
     for (auto i = 0; i < coalescedLoads_.size(); ++i) {
       auto& load = coalescedLoads_[i];
       if (load->state() == CoalescedLoad::State::kPlanned) {
-        executor_->add([&pendingLoad = load]() {
+        executor_->add([pendingLoad = load]() {
           process::TraceContext trace("Read Ahead");
           if (FLAGS_memory_manager_destructed)
           {

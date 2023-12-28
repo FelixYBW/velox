@@ -620,6 +620,7 @@ void ReaderBase::scheduleRowGroups(
   for (auto i = 0; i < numRowGroupsToLoad; i++) {
     auto thisGroup = rowGroupIds[currentGroup + i];
     if (!inputs_[thisGroup]) {
+      std::cout << " xgbtck schedule row group " << << thisGroup << std::endl;
       inputs_[thisGroup] = reader.loadRowGroup(thisGroup, input_);
     }
   }
