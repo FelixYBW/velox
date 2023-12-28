@@ -196,7 +196,8 @@ void DirectBufferedInput::makeLoads(
           pendingLoad->loadOrFuture(nullptr);
           if (FLAGS_memory_manager_destructed)
           {
-            std::cout << "xgbtck executor coalesce function returned threadid = " << std::this_thread::get_id() << std::endl;
+            DirectCoalescedLoad *dl = dynamic_cast<DirectCoalescedLoad*>(pendingLoad.get());
+            std::cout << "xgbtck executor coalesce function returned threadid = " << std::this_thread::get_id() << " offset = " << dl->requests()[0].region.offset << " end = " << dl->requests()[0].region.offset + dl->size() << std::endl;
           }
         });
       }

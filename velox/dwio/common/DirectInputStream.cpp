@@ -21,6 +21,8 @@
 #include "velox/dwio/common/DirectBufferedInput.h"
 #include "velox/dwio/common/DirectInputStream.h"
 
+DECLARE_bool(memory_manager_destructed);
+
 using ::facebook::velox::common::Region;
 
 namespace facebook::velox::dwio::common {
