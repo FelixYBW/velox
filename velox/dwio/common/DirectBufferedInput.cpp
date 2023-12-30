@@ -187,6 +187,10 @@ void DirectBufferedInput::makeLoads(
     for (auto i = 0; i < coalescedLoads_.size(); ++i) {
       auto& load = coalescedLoads_[i];
       if (load->state() == CoalescedLoad::State::kPlanned) {
+        if (FLAGS_memory_manager_destructed)
+        {
+          std::cout << "xgbtck send coalesceload to executor " << std::endl;
+        }
         executor_->add([pendingLoad = load]() {
           process::TraceContext trace("Read Ahead");
           if (FLAGS_memory_manager_destructed)
@@ -286,6 +290,9 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool isPrefetch) {
     lastEnd = region.offset + request.loadSize;
     size += std::min<int32_t>(loadQuantum_, region.length);
   }
+  std::for_each(buffers.begin(), buffers.end(), [](auto& buffer) {
+    std::cout << "xgbtck coalesced load buffer size = " << buffer.size() << std::endl;
+  });
   input_->read(buffers, requests_[0].region.offset, LogType::FILE);
   ioStats_->read().increment(size);
   ioStats_->incRawOverreadBytes(overread);
