@@ -133,6 +133,13 @@ class DirectBufferedInput : public BufferedInput {
 
   ~DirectBufferedInput() override {
     for (auto& load : coalescedLoads_) {
+      if (load->state() == CoalescedLoad::State::kLoading) {
+        folly::SemiFuture<bool> waitFuture(false);
+        if (!load->loadOrFuture(&waitFuture)) {
+          auto& exec = folly::QueuedImmediateExecutor::instance();
+          std::move(waitFuture).via(&exec).wait();
+        }
+      }
       load->cancel();
     }
   }
