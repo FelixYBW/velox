@@ -131,19 +131,8 @@ class DirectBufferedInput : public BufferedInput {
                     << std::endl;
         }
 
-  ~DirectBufferedInput() override {
-    for (auto& load : coalescedLoads_) {
-      if (load->state() == CoalescedLoad::State::kLoading) {
-        folly::SemiFuture<bool> waitFuture(false);
-        if (!load->loadOrFuture(&waitFuture)) {
-          auto& exec = folly::QueuedImmediateExecutor::instance();
-          std::move(waitFuture).via(&exec).wait();
-        }
-      }
-      load->cancel();
-    }
-  }
-
+  ~DirectBufferedInput() override;
+  
   std::unique_ptr<SeekableInputStream> enqueue(
       velox::common::Region region,
       const StreamIdentifier* sid) override;
@@ -170,6 +159,8 @@ class DirectBufferedInput : public BufferedInput {
         input_, fileNum_, tracker_, groupId_, ioStats_, executor_, options_));
     return input;
   }
+
+  virtual void close() override;
 
   memory::MemoryPool* pool() {
     return &pool_;

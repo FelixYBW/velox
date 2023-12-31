@@ -19,6 +19,7 @@
 #include "velox/common/process/TraceContext.h"
 #include "velox/dwio/common/DirectInputStream.h"
 #include <gflags/gflags.h>
+#include <execinfo.h>
 
 DECLARE_int32(cache_prefetch_min_pct);
 DECLARE_bool(memory_manager_destructed);
@@ -30,6 +31,36 @@ namespace facebook::velox::dwio::common {
 using cache::CoalescedLoad;
 using cache::ScanTracker;
 using cache::TrackingId;
+
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+
+}
+
+DirectBufferedInput::~DirectBufferedInput() {
+  close();
+  print_stacktrace();
+}
+
+void DirectBufferedInput::close() {
+  
+  BufferedInput::close();
+
+  for (auto& load : coalescedLoads_) {
+    if (load->state() == cache::CoalescedLoad::State::kLoading) {
+      folly::SemiFuture<bool> waitFuture(false);
+      if (!load->loadOrFuture(&waitFuture)) {
+        auto& exec = folly::QueuedImmediateExecutor::instance();
+        std::move(waitFuture).via(&exec).wait();
+      }
+    }
+    load->cancel();
+  }
+}
 
 std::unique_ptr<SeekableInputStream> DirectBufferedInput::enqueue(
     Region region,
