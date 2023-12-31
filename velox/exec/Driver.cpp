@@ -25,6 +25,7 @@
 #include "velox/exec/Operator.h"
 #include "velox/exec/OperatorUtils.h"
 #include "velox/exec/Task.h"
+#include <execinfo.h>
 
 using facebook::velox::common::testutil::TestValue;
 
@@ -766,9 +767,20 @@ void Driver::initializeOperatorStats(std::vector<OperatorStats>& stats) {
     stats[id] = op->stats(false);
   }
 }
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+
+}
 
 void Driver::closeOperators() {
   // Close operators.
+
+  print_stacktrace();
+
   for (auto& op : operators_) {
     op->close();
   }
