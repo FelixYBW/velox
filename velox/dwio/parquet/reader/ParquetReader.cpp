@@ -89,6 +89,8 @@ class ReaderBase {
       const RowTypePtr& rowTypePtr,
       bool fileColumnNamesReadAsLowerCase);
 
+  void close();
+
  private:
   // Reads and parses file footer.
   void loadFileMetaData();
@@ -142,6 +144,14 @@ ReaderBase::ReaderBase(
   loadFileMetaData();
   initializeSchema();
 }
+
+void ReaderBase::close() {
+  input_.reset();
+  for (auto& input : inputs_) {
+    input.second.reset();
+  }
+}
+
 
 void ReaderBase::loadFileMetaData() {
   bool preloadFile =
@@ -837,4 +847,9 @@ std::unique_ptr<dwio::common::RowReader> ParquetReader::createRowReader(
     const dwio::common::RowReaderOptions& options) const {
   return std::make_unique<ParquetRowReader>(readerBase_, options);
 }
+
+void ParquetReader::close() {
+  readerBase_->close();
+}
+
 } // namespace facebook::velox::parquet

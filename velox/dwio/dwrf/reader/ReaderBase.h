@@ -230,6 +230,10 @@ class ReaderBase {
   DwrfFormat format() const {
     return postScript_->format();
   }
+  void close() {
+    if (input_)
+      input_->close();
+  }
 
  private:
   static std::shared_ptr<const Type> convertType(

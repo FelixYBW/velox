@@ -77,6 +77,8 @@ class SplitReader {
   bool allPrefetchIssued() const;
 
   std::string toString() const;
+  
+  void close();
 
  protected:
   // Different table formats may have different meatadata columns. This function
