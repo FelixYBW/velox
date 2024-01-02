@@ -148,7 +148,7 @@ ReaderBase::ReaderBase(
 void ReaderBase::close() {
   input_.reset();
   for (auto& input : inputs_) {
-    input.second.reset();
+    input.second->close();
   }
 }
 
