@@ -220,6 +220,7 @@ function install_prerequisites {
 }
 
 function install_velox_deps {
+  run_and_time install_fmt
   run_and_time install_folly
   run_and_time install_conda
 }
