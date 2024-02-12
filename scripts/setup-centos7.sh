@@ -214,7 +214,7 @@ function install_fmt {
   rm -rf  /usr/local/include/fmt 
   rm -rf fmt
   wget_and_untar https://github.com/fmtlib/fmt/archive/10.1.1.tar.gz fmt
-  cmake_install -DFMT_TEST=OFF
+  cmake_install fmt -DFMT_TEST=OFF
 }
 
 function install_prerequisites {
