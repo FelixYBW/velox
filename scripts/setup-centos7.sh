@@ -212,7 +212,8 @@ function install_fmt {
   rm -rf /usr/local/lib64/libfmt.a
   rm -rf /usr/local/lib64/cmake/fmt
   rm -rf  /usr/local/include/fmt 
-  github_checkout fmtlib/fmt "${FMT_VERSION}"
+  rm -rf fmt
+  wget_and_untar https://github.com/fmtlib/fmt/archive/10.1.1.tar.gz fmt
   cmake_install -DFMT_TEST=OFF
 }
 
