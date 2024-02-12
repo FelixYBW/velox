@@ -209,6 +209,9 @@ function install_gtest {
 } 
 
 function install_fmt {
+  rm -rf /usr/local/lib64/libfmt.a
+  rm -rf /usr/local/lib64/cmake/fmt
+  rm -rf  /usr/local/include/fmt 
   github_checkout fmtlib/fmt "${FMT_VERSION}"
   cmake_install -DFMT_TEST=OFF
 }
