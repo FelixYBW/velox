@@ -21,6 +21,7 @@ source $SCRIPTDIR/setup-helper-functions.sh
 DEPENDENCY_DIR=${DEPENDENCY_DIR:-/tmp/velox-deps}
 CPU_TARGET="${CPU_TARGET:-avx}"
 NPROC=$(getconf _NPROCESSORS_ONLN)
+FMT_VERSION=10.1.1
 export CFLAGS=$(get_cxx_flags $CPU_TARGET)  # Used by LZO.
 export CXXFLAGS=$CFLAGS  # Used by boost.
 export CPPFLAGS=$CFLAGS  # Used by LZO.
@@ -206,6 +207,11 @@ function install_gtest {
   make "-j$(nproc)"
   $SUDO make install
 } 
+
+function install_fmt {
+  github_checkout fmtlib/fmt "${FMT_VERSION}"
+  cmake_install -DFMT_TEST=OFF
+}
 
 function install_prerequisites {
   run_and_time install_lzo
