@@ -161,15 +161,21 @@ class VectorHasher {
 
   static constexpr uint64_t kNullHash = BaseVector::kNullHash;
 
+  bool isVarbinaryOrVarchar(TypeKind type) {
+    return type == TypeKind::VARCHAR || type == TypeKind::VARBINARY;
+  }
+
   // Decodes the 'vector' in preparation for calling hash() or
   // computeValueIds(). The decoded vector can be accessed via decodedVector()
   // getter.
   void decode(const BaseVector& vector, const SelectivityVector& rows) {
-    VELOX_CHECK(
-        type_->kindEquals(vector.type()),
-        "Type mismatch: {} vs. {}",
-        type_->toString(),
-        vector.type()->toString());
+    if (!(isVarbinaryOrVarchar(type_->kind()) && isVarbinaryOrVarchar(vector.type()->kind()))) {
+      VELOX_CHECK(
+          type_->kindEquals(vector.type()),
+          "Type mismatch: {} vs. {}",
+          type_->toString(),
+          vector.type()->toString());
+    }
     decoded_.decode(vector, rows);
   }
 
