@@ -21,6 +21,15 @@ if("${ARROW_LIB}" STREQUAL "ARROW_LIB-NOTFOUND"
   set(Arrow_FOUND false)
   return()
 endif()
+
+find_package(Thrift)
+if(NOT Thrift_FOUND)
+  # Requires building arrow from source with thrift bundled.
+  set(Arrow_FOUND false)
+  return()
+endif()
+add_library(thrift ALIAS thrift::thrift)
+
 set(Arrow_FOUND true)
 
 add_library(arrow STATIC IMPORTED GLOBAL)
@@ -31,7 +40,8 @@ find_path(ARROW_INCLUDE_PATH arrow/api.h)
 set_target_properties(
   arrow arrow_testing parquet PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                          ${ARROW_INCLUDE_PATH})
-set_target_properties(arrow PROPERTIES IMPORTED_LOCATION ${ARROW_LIB})
+set_target_properties(arrow PROPERTIES IMPORTED_LOCATION ${ARROW_LIB}
+                                       INTERFACE_LINK_LIBRARIES thrift)
 set_target_properties(parquet PROPERTIES IMPORTED_LOCATION ${PARQUET_LIB})
 set_target_properties(arrow_testing PROPERTIES IMPORTED_LOCATION
                                                ${ARROW_TESTING_LIB})

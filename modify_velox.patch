@@ -1,0 +1,143 @@
+diff --git a/CMake/Findlz4.cmake b/CMake/Findlz4.cmake
+index d49115f12..1aaa8e532 100644
+--- a/CMake/Findlz4.cmake
++++ b/CMake/Findlz4.cmake
+@@ -21,18 +21,19 @@ find_package_handle_standard_args(lz4 DEFAULT_MSG LZ4_LIBRARY LZ4_INCLUDE_DIR)
+ 
+ mark_as_advanced(LZ4_LIBRARY LZ4_INCLUDE_DIR)
+ 
+-get_filename_component(liblz4_ext ${LZ4_LIBRARY} EXT)
+-if(liblz4_ext STREQUAL ".a")
+-  set(liblz4_type STATIC)
+-else()
+-  set(liblz4_type SHARED)
+-endif()
+-
+ if(NOT TARGET lz4::lz4)
+-  add_library(lz4::lz4 ${liblz4_type} IMPORTED)
+-  set_target_properties(lz4::lz4 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+-                                            "${LZ4_INCLUDE_DIR}")
+-  set_target_properties(
+-    lz4::lz4 PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+-                        IMPORTED_LOCATION "${LZ4_LIBRARIES}")
++  add_library(lz4::lz4 UNKNOWN IMPORTED)
++  set_target_properties(lz4::lz4 PROPERTIES
++    INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
++    IMPORTED_LINK_INTERFACE_LANGUAGES "C"
++    IMPORTED_LOCATION_RELEASE "${LZ4_LIBRARY_RELEASE}")
++  set_property(TARGET lz4::lz4 APPEND PROPERTY
++      IMPORTED_CONFIGURATIONS RELEASE)
++
++  if(LZ4_LIBRARY_DEBUG)
++      set_property(TARGET lz4::lz4 APPEND PROPERTY
++          IMPORTED_CONFIGURATIONS DEBUG)
++      set_property(TARGET lz4::lz4 PROPERTY
++          IMPORTED_LOCATION_DEBUG "${LZ4_LIBRARY_DEBUG}")
++  endif()
+ endif()
+diff --git a/CMake/resolve_dependency_modules/arrow/CMakeLists.txt b/CMake/resolve_dependency_modules/arrow/CMakeLists.txt
+index 3f01df2fd..8c1c493f3 100644
+--- a/CMake/resolve_dependency_modules/arrow/CMakeLists.txt
++++ b/CMake/resolve_dependency_modules/arrow/CMakeLists.txt
+@@ -24,6 +24,9 @@ if(VELOX_ENABLE_ARROW)
+   set(ARROW_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/arrow_ep")
+   set(ARROW_CMAKE_ARGS
+       -DARROW_PARQUET=OFF
++      -DARROW_PARQUET=ON
++      -DARROW_FILESYSTEM=ON
++      -DARROW_PROTOBUF_USE_SHARED=OFF
+       -DARROW_WITH_THRIFT=ON
+       -DARROW_WITH_LZ4=ON
+       -DARROW_WITH_SNAPPY=ON
+@@ -66,6 +69,8 @@ if(VELOX_ENABLE_ARROW)
+     arrow_ep
+     PREFIX ${ARROW_PREFIX}
+     URL ${VELOX_ARROW_SOURCE_URL}
++    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/modify_arrow.patch
++    COMMAND patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/modify_arrow_dataset_scan_option.patch
+     URL_HASH ${VELOX_ARROW_BUILD_SHA256_CHECKSUM}
+     SOURCE_SUBDIR cpp
+     CMAKE_ARGS ${ARROW_CMAKE_ARGS}
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bb7c49907..3372d48b4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -234,10 +234,15 @@ if(VELOX_ENABLE_ABFS)
+ endif()
+
+ if(VELOX_ENABLE_HDFS)
+-  find_library(
+-    LIBHDFS3
+-    NAMES libhdfs3.so libhdfs3.dylib
+-    HINTS "${CMAKE_SOURCE_DIR}/hawq/depends/libhdfs3/_build/src/" REQUIRED)
++  find_package(libhdfs3)
++  if(libhdfs3_FOUND AND TARGET HDFS::hdfs3)
++    set(LIBHDFS3 HDFS::hdfs3)
++  else()
++    find_library(
++      LIBHDFS3
++      NAMES libhdfs3.so libhdfs3.dylib
++      HINTS "${CMAKE_SOURCE_DIR}/hawq/depends/libhdfs3/_build/src/" REQUIRED)
++  endif()
+   add_definitions(-DVELOX_ENABLE_HDFS3)
+ endif()
+
+@@ -378,7 +383,7 @@ resolve_dependency(Boost 1.77.0 COMPONENTS ${BOOST_INCLUDE_LIBRARIES})
+ # for reference. find_package(range-v3)
+
+ set_source(gflags)
+-resolve_dependency(gflags COMPONENTS ${VELOX_GFLAGS_TYPE})
++resolve_dependency(gflags)
+ if(NOT TARGET gflags::gflags)
+   # This is a bit convoluted, but we want to be able to use gflags::gflags as a
+   # target even when velox is built as a subproject which uses
+diff --git a/velox/common/process/tests/CMakeLists.txt b/velox/common/process/tests/CMakeLists.txt
+index 6797697a1..3e241f8f7 100644
+--- a/velox/common/process/tests/CMakeLists.txt
++++ b/velox/common/process/tests/CMakeLists.txt
+@@ -18,4 +18,4 @@ add_executable(velox_process_test ProfilerTest.cpp ThreadLocalRegistryTest.cpp
+ add_test(velox_process_test velox_process_test)
+
+ target_link_libraries(velox_process_test PRIVATE velox_process fmt::fmt gtest
+-                                                 velox_time gtest_main)
++                                                 velox_time gtest_main glog::glog gflags::gflags)
+diff --git a/velox/connectors/hive/storage_adapters/abfs/RegisterAbfsFileSystem.cpp b/velox/connectors/hive/storage_adapters/abfs/RegisterAbfsFileSystem.cpp
+index e2a638df6..e383cf205 100644
+--- a/velox/connectors/hive/storage_adapters/abfs/RegisterAbfsFileSystem.cpp
++++ b/velox/connectors/hive/storage_adapters/abfs/RegisterAbfsFileSystem.cpp
+@@ -38,7 +38,6 @@ std::shared_ptr<FileSystem> abfsFileSystemGenerator(
+
+ void registerAbfsFileSystem() {
+ #ifdef VELOX_ENABLE_ABFS
+-  LOG(INFO) << "Register ABFS";
+   registerFileSystem(isAbfsFile, std::function(abfsFileSystemGenerator));
+ #endif
+ }
+diff --git a/velox/connectors/hive/storage_adapters/hdfs/tests/HdfsMiniCluster.cpp b/velox/connectors/hive/storage_adapters/hdfs/tests/HdfsMiniCluster.cpp
+index 10ee508ba..027a58ecc 100644
+--- a/velox/connectors/hive/storage_adapters/hdfs/tests/HdfsMiniCluster.cpp
++++ b/velox/connectors/hive/storage_adapters/hdfs/tests/HdfsMiniCluster.cpp
+@@ -72,7 +72,7 @@ HdfsMiniCluster::HdfsMiniCluster() {
+         "Failed to find minicluster executable {}'", miniClusterExecutableName);
+   }
+   boost::filesystem::path hadoopHomeDirectory = exePath_;
+-  hadoopHomeDirectory.remove_leaf().remove_leaf();
++  hadoopHomeDirectory.remove_filename().remove_filename();
+   setupEnvironment(hadoopHomeDirectory.string());
+ }
+
+diff --git a/velox/dwio/parquet/writer/arrow/tests/CMakeLists.txt b/velox/dwio/parquet/writer/arrow/tests/CMakeLists.txt
+index 2cabfc29a..54329ce23 100644
+--- a/velox/dwio/parquet/writer/arrow/tests/CMakeLists.txt
++++ b/velox/dwio/parquet/writer/arrow/tests/CMakeLists.txt
+@@ -39,7 +39,9 @@ target_link_libraries(
+   gtest
+   gtest_main
+   arrow
+-  arrow_testing)
++  arrow_testing
++  glog::glog
++  gflags::gflags)
+ 
+ add_library(
+   velox_dwio_arrow_parquet_writer_test_lib
