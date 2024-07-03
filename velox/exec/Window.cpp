@@ -718,6 +718,11 @@ RowVectorPtr Window::getOutput() {
       currentPartition_->clearOutputRows(numResultRows.second);
     }
   }
+  numBatches_++;
+  if (numBatches_ % 10 == 0 )
+  {
+    std::cout << this->pool()->root()->treeMemoryUsage() << std::endl;
+  }
 
   return numResultRows.first < numOutputRows
       ? std::dynamic_pointer_cast<RowVector>(

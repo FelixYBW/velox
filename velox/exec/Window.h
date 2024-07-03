@@ -231,6 +231,7 @@ class Window : public Operator {
   // computePeerBuffers they are saved here.
   vector_size_t peerStartRow_ = 0;
   vector_size_t peerEndRow_ = 0;
+  uint64_t numBatches_ = 0;
 };
 
 } // namespace facebook::velox::exec
