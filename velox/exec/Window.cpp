@@ -19,6 +19,7 @@
 #include "velox/exec/SortWindowBuild.h"
 #include "velox/exec/StreamingWindowBuild.h"
 #include "velox/exec/Task.h"
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -39,11 +40,13 @@ Window::Window(
       windowNode_(windowNode),
       currentPartition_(nullptr),
       stringAllocator_(pool()) {
+    pool()->setDebug(true);
   auto* spillConfig =
       spillConfig_.has_value() ? &spillConfig_.value() : nullptr;
   if (windowNode->inputsSorted()) {
     if (driverCtx->queryConfig().rowsStreamingWindowEnabled() ||
         supportRowsStreaming()) {
+      std::cout << "the rowstreaming window is running" << std::endl;
       windowBuild_ = std::make_unique<RowsStreamingWindowBuild>(
           windowNode_, pool(), spillConfig, &nonReclaimableSection_);
     } else {
@@ -61,6 +64,7 @@ void Window::initialize() {
   VELOX_CHECK_NOT_NULL(windowNode_);
   createWindowFunctions();
   createPeerAndFrameBuffers();
+  std::cout << "the numRowsPerOutput_ is " << numRowsPerOutput_ << std::endl;
   windowBuild_->setNumRowsPerOutput(numRowsPerOutput_);
   windowNode_.reset();
 }
@@ -603,6 +607,10 @@ void Window::callApplyForPartitionRows(
   vector_size_t numRows = endRow - startRow;
   numProcessedRows_ += numRows;
   partitionOffset_ += numRows;
+
+  if (currentPartition_->isPartial()) {
+    currentPartition_->clearOutputRows(numRows);
+  }
 }
 
 std::pair<vector_size_t, vector_size_t> Window::callApplyLoop(
@@ -711,14 +719,15 @@ RowVectorPtr Window::getOutput() {
 
   // Compute the output values of window functions.
   auto numResultRows = callApplyLoop(numOutputRows, result);
-  if (currentPartition_ && currentPartition_->isPartial()) {
-    if (numResultRows.second == -1) {
-      currentPartition_->clearOutputRows(numResultRows.first);
-    } else {
-      currentPartition_->clearOutputRows(numResultRows.second);
-    }
-  }
 
+  numBatches_++;
+  this->pool()->setDebug(true);
+  if (numBatches_ % 100 == 0 )
+  {
+    this->pool()->leakCheckDbg();
+    std::cout << this->pool()->root()->treeMemoryUsage() << std::endl;
+  }
+  
   return numResultRows.first < numOutputRows
       ? std::dynamic_pointer_cast<RowVector>(
             result->slice(0, numResultRows.first))

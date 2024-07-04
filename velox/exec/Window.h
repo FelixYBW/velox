@@ -76,7 +76,7 @@ class Window : public Operator {
     VectorPtr value;
     std::optional<int64_t> constant;
   };
-
+  uint64_t numBatches_ = 0;
   // Structure for the window frame for each function.
   struct WindowFrame {
     const core::WindowNode::WindowType type;

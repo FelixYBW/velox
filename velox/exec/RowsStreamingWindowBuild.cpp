@@ -72,7 +72,7 @@ void RowsStreamingWindowBuild::noMoreInput() {
 }
 
 std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
-  if (outputPartition_ > 0) {
+  if (outputPartition_ >= 0) {
     windowPartitions_[outputPartition_].reset();
   }
 

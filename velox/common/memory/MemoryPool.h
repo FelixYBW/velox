@@ -497,6 +497,11 @@ class MemoryPool : public std::enable_shared_from_this<MemoryPool> {
     return bits::roundUp(size, 8 * kMB);
   }
 
+  void setDebug(bool debug) {
+    debugEnabled_ = debug;
+  }
+  virtual void leakCheckDbg() = 0;
+
  protected:
   static constexpr uint64_t kMB = 1 << 20;
 
@@ -539,7 +544,7 @@ class MemoryPool : public std::enable_shared_from_this<MemoryPool> {
   const int64_t maxCapacity_;
   const bool trackUsage_;
   const bool threadSafe_;
-  const bool debugEnabled_;
+  bool debugEnabled_;
   const bool coreOnAllocationFailureEnabled_;
 
   /// Indicates if the memory pool has been aborted by the memory arbitrator or
@@ -730,6 +735,14 @@ class MemoryPoolImpl : public MemoryPool {
   static void setDebugPoolNameRegex(const std::string& regex) {
     debugPoolNameRegex() = regex;
   }
+
+  // Invoked by memory pool destructor to detect the sources of leaked memory
+  // allocations from the call sites which are still recorded in
+  // 'debugAllocRecords_'. If there is no memory leaks, 'debugAllocRecords_'
+  // should be empty as all the memory allocations should have been freed on
+  // memory pool destruction. We only check this if debug mode of this memory
+  // pool is enabled.
+  void leakCheckDbg() override;
 
  private:
   uint64_t shrink(uint64_t targetBytes = 0) override;
@@ -988,13 +1001,6 @@ class MemoryPoolImpl : public MemoryPool {
   // Accounts for ContiguousAllocation size change in growContiguous().
   void recordGrowDbg(const void* addr, uint64_t newSize);
 
-  // Invoked by memory pool destructor to detect the sources of leaked memory
-  // allocations from the call sites which are still recorded in
-  // 'debugAllocRecords_'. If there is no memory leaks, 'debugAllocRecords_'
-  // should be empty as all the memory allocations should have been freed on
-  // memory pool destruction. We only check this if debug mode of this memory
-  // pool is enabled.
-  void leakCheckDbg();
 
   void handleAllocationFailure(const std::string& failureMessage);
 
