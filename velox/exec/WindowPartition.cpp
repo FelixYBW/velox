@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include "velox/exec/WindowPartition.h"
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -55,7 +56,11 @@ void WindowPartition::addRows(const std::vector<char*>& rows) {
 
 void WindowPartition::clearOutputRows(vector_size_t numRows) {
   VELOX_CHECK(partial_, "Current WindowPartition should be partial.");
+
+  //std::cout << "WindowPartition::clearOutputRows called " << complete_ << " " << (complete_ && rows_.size() > numRows) << std::endl;
   if (!complete_ || (complete_ && rows_.size() >= numRows)) {
+    //std::cout << "WindowPartition::clearOutputRows " << numRows << std::endl;
+
     data_->eraseRows(folly::Range<char**>(rows_.data(), numRows - 1));
     rows_.erase(rows_.begin(), rows_.begin() + numRows - 1);
     partition_ = folly::Range(rows_.data(), rows_.size());

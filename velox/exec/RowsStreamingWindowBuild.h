@@ -67,6 +67,7 @@ class RowsStreamingWindowBuild : public WindowBuild {
 
   // Holds input rows within the current partition.
   std::vector<char*> inputRows_;
+  uint64_t maxInputRows_ = 0;
 
   // Used to compare rows based on partitionKeys.
   char* previousRow_ = nullptr;
