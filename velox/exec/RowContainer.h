@@ -315,6 +315,10 @@ class RowContainer {
   int64_t numRows() const {
     return numRows_;
   }
+  
+  int32_t getFreeFlagOffset() const {
+    return freeFlagOffset_;
+  }
 
   /// Copy key and dependent columns into a flat VARBINARY vector. All columns
   /// of a row are copied into a single buffer. The format of that buffer is an
@@ -1299,6 +1303,7 @@ class RowContainer {
   std::shared_ptr<HashStringAllocator> stringAllocator_;
 
   int alignment_ = 1;
+
 };
 
 template <>

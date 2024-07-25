@@ -17,6 +17,7 @@
 
 #include "velox/exec/RowContainer.h"
 #include "velox/vector/BaseVector.h"
+#include <iostream>
 
 /// Simple WindowPartition that builds over the RowContainer used for storing
 /// the input rows in the Window Operator. This works completely in-memory.

@@ -21,6 +21,8 @@
 #include "velox/exec/ContainerRowSerde.h"
 #include "velox/exec/Operator.h"
 #include "velox/type/FloatingPointUtil.h"
+#include <execinfo.h>
+#include <iostream>
 
 namespace facebook::velox::exec {
 namespace {

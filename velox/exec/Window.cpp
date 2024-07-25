@@ -40,24 +40,20 @@ Window::Window(
       windowNode_(windowNode),
       currentPartition_(nullptr),
       stringAllocator_(pool()) {
-      pool()->setDebug(true);
-      std::cout << "xgbtck window initialization" << std::endl;
+
   auto* spillConfig =
       spillConfig_.has_value() ? &spillConfig_.value() : nullptr;
   if (windowNode->inputsSorted()) {
     if (supportRowsStreaming()) {
       windowBuild_ = std::make_unique<RowsStreamingWindowBuild>(
           windowNode_, pool(), spillConfig, &nonReclaimableSection_);
-          std::cout << "the rowstreaming window is running" << std::endl;
     } else {
       windowBuild_ = std::make_unique<StreamingWindowBuild>(
           windowNode, pool(), spillConfig, &nonReclaimableSection_);
-          std::cout << "the normal streaming window is running" << std::endl;
     }
   } else {
     windowBuild_ = std::make_unique<SortWindowBuild>(
         windowNode, pool(), spillConfig, &nonReclaimableSection_, &spillStats_);
-          std::cout << "the sort window is running" << std::endl;
   }
 }
 
@@ -66,7 +62,6 @@ void Window::initialize() {
   VELOX_CHECK_NOT_NULL(windowNode_);
   createWindowFunctions();
   createPeerAndFrameBuffers();
-  std::cout << "the numRowsPerOutput_ is " << numRowsPerOutput_ << std::endl;
   windowBuild_->setNumRowsPerOutput(numRowsPerOutput_);
   windowNode_.reset();
 }
@@ -698,19 +693,15 @@ RowVectorPtr Window::getOutput() {
 
   auto numOutputRows = std::min(numRowsPerOutput_, numRowsLeft);
 
-  numBatches_++;
-  this->pool()->setDebug(true);
-  if (numBatches_ % 10 == 0 )
-  {
-    this->pool()->leakCheckDbg();
-    std::cout << this->pool()->root()->treeMemoryUsage() << std::endl;
-  }
-
   auto result = BaseVector::create<RowVector>(
       outputType_, numOutputRows, operatorCtx_->pool());
 
   // Compute the output values of window functions.
   auto numResultRows = callApplyLoop(numOutputRows, result);
+
+  numBatches_++;
+
+
   return numResultRows < numOutputRows
       ? std::dynamic_pointer_cast<RowVector>(result->slice(0, numResultRows))
       : result;

@@ -59,10 +59,16 @@ void WindowPartition::clearOutputRows(vector_size_t numRows) {
 
   //std::cout << "WindowPartition::clearOutputRows called " << complete_ << " " << (complete_ && rows_.size() > numRows) << std::endl;
   if (!complete_ || (complete_ && rows_.size() >= numRows)) {
-    //std::cout << "WindowPartition::clearOutputRows " << numRows << std::endl;
 
-    data_->eraseRows(folly::Range<char**>(rows_.data(), numRows - 1));
-    rows_.erase(rows_.begin(), rows_.begin() + numRows - 1);
+    if ( complete_ && rows_.size() == 1 && numRows == 1 ) {
+      // Directly delete the last rows and no need to keep the last row to compare the peer .
+      data_->eraseRows(folly::Range<char**>(rows_.data(), numRows));
+      rows_.erase(rows_.begin(), rows_.begin() + numRows);
+    } else {
+      data_->eraseRows(folly::Range<char**>(rows_.data(), numRows - 1));
+      rows_.erase(rows_.begin(), rows_.begin() + numRows - 1);
+    }
+
     partition_ = folly::Range(rows_.data(), rows_.size());
     startRow_ += numRows;
   }

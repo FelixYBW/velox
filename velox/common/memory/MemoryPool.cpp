@@ -1250,7 +1250,7 @@ void MemoryPoolImpl::leakCheckDbg() {
         << allocationRecord.callStack.toString();
   }
   std::cout << buf.str() << std::endl;
-  // VELOX_FAIL(buf.str());
+  VELOX_FAIL(buf.str());
 }
 
 void MemoryPoolImpl::handleAllocationFailure(
