@@ -26,7 +26,8 @@ RowsStreamingWindowBuild::RowsStreamingWindowBuild(
     const common::SpillConfig* spillConfig,
     tsan_atomic<bool>* nonReclaimableSection)
     : WindowBuild(windowNode, pool, spillConfig, nonReclaimableSection),
-    inputRows_(0, memory::StlAllocator<char*>(*pool)){
+    inputRows_(0, memory::StlAllocator<char*>(*pool)),
+    windowPartitions_(0, memory::StlAllocator<char*>(*pool)){
   velox::common::testutil::TestValue::adjust(
       "facebook::velox::exec::RowsStreamingWindowBuild::RowsStreamingWindowBuild",
       this);
@@ -38,7 +39,8 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
   }
 
   if (windowPartitions_.size() <= inputPartition_) {
-    windowPartitions_.push_back(std::make_shared<WindowPartition>(
+    windowPartitions_.push_back(std::allocate_shared<WindowPartition>(
+        memory::StlAllocator<char*>(*pool_),
         pool_, data_.get(), inversedInputChannels_, sortKeyInfo_));
   }
 
