@@ -61,10 +61,10 @@ class PartitionStreamingWindowBuild : public WindowBuild {
   // Vector of pointers to each input row in the data_ RowContainer.
   // Rows are erased from data_ when they are output from the
   // Window operator.
-  std::vector<char*> sortedRows_;
+  std::vector<char*, memory::StlAllocator<char*>> sortedRows_;
 
   // Holds input rows within the current partition.
-  std::vector<char*> inputRows_;
+  std::vector<char*, memory::StlAllocator<char*>> inputRows_;
 
   // Indices of  the start row (in sortedRows_) of each partition in
   // the RowContainer data_. This auxiliary structure helps demarcate

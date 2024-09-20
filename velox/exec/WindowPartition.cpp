@@ -18,6 +18,7 @@
 namespace facebook::velox::exec {
 
 WindowPartition::WindowPartition(
+    velox::memory::MemoryPool* pool,
     RowContainer* data,
     const folly::Range<char**>& rows,
     const std::vector<column_index_t>& inputMapping,
@@ -26,10 +27,12 @@ WindowPartition::WindowPartition(
     bool complete)
     : partial_(partial),
       data_(data),
+      rows_(0, memory::StlAllocator<char*>(*pool)),
       partition_(rows),
       complete_(complete),
       inputMapping_(inputMapping),
-      sortKeyInfo_(sortKeyInfo) {
+      sortKeyInfo_(sortKeyInfo)
+      {
   VELOX_CHECK_NE(partial_, complete_);
   VELOX_CHECK_NE(complete_, partition_.empty());
 
@@ -39,19 +42,21 @@ WindowPartition::WindowPartition(
 }
 
 WindowPartition::WindowPartition(
+    velox::memory::MemoryPool* pool,
     RowContainer* data,
     const folly::Range<char**>& rows,
     const std::vector<column_index_t>& inputMapping,
     const std::vector<std::pair<column_index_t, core::SortOrder>>& sortKeyInfo)
-    : WindowPartition(data, rows, inputMapping, sortKeyInfo, false, true) {}
+    : WindowPartition(pool, data, rows, inputMapping, sortKeyInfo, false, true) {}
 
 WindowPartition::WindowPartition(
+    velox::memory::MemoryPool* pool,
     RowContainer* data,
     const std::vector<column_index_t>& inputMapping,
     const std::vector<std::pair<column_index_t, core::SortOrder>>& sortKeyInfo)
-    : WindowPartition(data, {}, inputMapping, sortKeyInfo, true, false) {}
+    : WindowPartition(pool, data, {}, inputMapping, sortKeyInfo, true, false) {}
 
-void WindowPartition::addRows(const std::vector<char*>& rows) {
+void WindowPartition::addRows(const std::vector<char*, memory::StlAllocator<char*>>& rows) {
   checkPartial();
   rows_.insert(rows_.end(), rows.begin(), rows.end());
   partition_ = folly::Range(rows_.data(), rows_.size());

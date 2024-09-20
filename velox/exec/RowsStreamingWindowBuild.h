@@ -64,7 +64,7 @@ class RowsStreamingWindowBuild : public WindowBuild {
   void addPartitionInputs(bool finished);
 
   // Points to the input rows in the current partition.
-  std::vector<char*> inputRows_;
+  std::vector<char*, memory::StlAllocator<char*>> inputRows_;
 
   // Used to compare rows based on partitionKeys.
   char* previousRow_ = nullptr;

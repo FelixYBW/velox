@@ -17,7 +17,7 @@
 
 #include "velox/exec/RowContainer.h"
 #include "velox/vector/BaseVector.h"
-
+#include "velox/common/memory/MemoryPool.h"
 /// Simple WindowPartition that builds over the RowContainer used for storing
 /// the input rows in the Window Operator. This works completely in-memory.
 /// WindowPartition supports partial window partitioning to facilitate
@@ -41,6 +41,7 @@ class WindowPartition {
   /// 'sortKeyInfo' : Order by columns used by the the Window operator. Used to
   /// get peer rows from the input partition.
   WindowPartition(
+      velox::memory::MemoryPool* pool,
       RowContainer* data,
       const folly::Range<char**>& rows,
       const std::vector<column_index_t>& inputMapping,
@@ -51,13 +52,14 @@ class WindowPartition {
   /// start data processing with a subset of partition rows. 'partial_' flag is
   /// set for the constructed window partition.
   WindowPartition(
+      velox::memory::MemoryPool* pool,
       RowContainer* data,
       const std::vector<column_index_t>& inputMapping,
       const std::vector<std::pair<column_index_t, core::SortOrder>>&
           sortKeyInfo);
 
   /// Adds remaining input 'rows' for a partial window partition.
-  void addRows(const std::vector<char*>& rows);
+  void addRows(const std::vector<char*, memory::StlAllocator<char*>>& rows);
 
   /// Removes the first 'numRows' in 'rows_' from a partial window partition
   /// after been processed.
@@ -169,6 +171,7 @@ class WindowPartition {
 
  private:
   WindowPartition(
+      velox::memory::MemoryPool* pool,
       RowContainer* data,
       const folly::Range<char**>& rows,
       const std::vector<column_index_t>& inputMapping,
@@ -236,7 +239,7 @@ class WindowPartition {
   RowContainer* const data_;
 
   // Points to the input rows for partial partition.
-  std::vector<char*> rows_;
+  std::vector<char*, memory::StlAllocator<char*>> rows_;
 
   // folly::Range is for the partition rows iterator provided by the
   // Window operator. The pointers are to rows from a RowContainer owned

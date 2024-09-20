@@ -23,7 +23,9 @@ PartitionStreamingWindowBuild::PartitionStreamingWindowBuild(
     velox::memory::MemoryPool* pool,
     const common::SpillConfig* spillConfig,
     tsan_atomic<bool>* nonReclaimableSection)
-    : WindowBuild(windowNode, pool, spillConfig, nonReclaimableSection) {}
+    : WindowBuild(windowNode, pool, spillConfig, nonReclaimableSection),
+    sortedRows_(0,memory::StlAllocator<char*>(*pool)),
+    inputRows_(0,memory::StlAllocator<char*>(*pool)) {}
 
 void PartitionStreamingWindowBuild::buildNextPartition() {
   partitionStartRows_.push_back(sortedRows_.size());
@@ -93,7 +95,7 @@ PartitionStreamingWindowBuild::nextPartition() {
       partitionSize);
 
   return std::make_shared<WindowPartition>(
-      data_.get(), partition, inversedInputChannels_, sortKeyInfo_);
+      pool_, data_.get(), partition, inversedInputChannels_, sortKeyInfo_);
 }
 
 bool PartitionStreamingWindowBuild::hasNextPartition() {

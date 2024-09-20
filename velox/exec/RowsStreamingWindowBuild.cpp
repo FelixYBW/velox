@@ -16,6 +16,7 @@
 
 #include "velox/exec/RowsStreamingWindowBuild.h"
 #include "velox/common/testutil/TestValue.h"
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -24,7 +25,8 @@ RowsStreamingWindowBuild::RowsStreamingWindowBuild(
     velox::memory::MemoryPool* pool,
     const common::SpillConfig* spillConfig,
     tsan_atomic<bool>* nonReclaimableSection)
-    : WindowBuild(windowNode, pool, spillConfig, nonReclaimableSection) {
+    : WindowBuild(windowNode, pool, spillConfig, nonReclaimableSection),
+    inputRows_(0, memory::StlAllocator<char*>(*pool)){
   velox::common::testutil::TestValue::adjust(
       "facebook::velox::exec::RowsStreamingWindowBuild::RowsStreamingWindowBuild",
       this);
@@ -37,7 +39,7 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
 
   if (windowPartitions_.size() <= inputPartition_) {
     windowPartitions_.push_back(std::make_shared<WindowPartition>(
-        data_.get(), inversedInputChannels_, sortKeyInfo_));
+        pool_, data_.get(), inversedInputChannels_, sortKeyInfo_));
   }
 
   windowPartitions_[inputPartition_]->addRows(inputRows_);
@@ -77,6 +79,9 @@ void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
 }
 
 void RowsStreamingWindowBuild::noMoreInput() {
+  std::cout << "xgbtck rowstreamingwindow no more input " << std::endl;
+  std::cout << this->pool_->root()->treeMemoryUsage() << std::endl;
+
   addPartitionInputs(true);
 }
 

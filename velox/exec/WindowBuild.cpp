@@ -90,7 +90,8 @@ WindowBuild::WindowBuild(
     tsan_atomic<bool>* nonReclaimableSection)
     : spillConfig_{spillConfig},
       nonReclaimableSection_{nonReclaimableSection},
-      decodedInputVectors_(windowNode->inputType()->size()) {
+      decodedInputVectors_(windowNode->inputType()->size()),
+      pool_{pool} {
   std::tie(inputChannels_, inversedInputChannels_, inputType_) =
       reorderInputChannels(
           windowNode->inputType(),

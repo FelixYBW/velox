@@ -118,6 +118,8 @@ class WindowBuild {
 
   // The maximum number of rows that can fit into an output block.
   vector_size_t numRowsPerOutput_;
+
+  velox::memory::MemoryPool* pool_;
 };
 
 } // namespace facebook::velox::exec
