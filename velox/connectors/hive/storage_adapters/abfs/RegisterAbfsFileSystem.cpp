@@ -38,7 +38,6 @@ std::shared_ptr<FileSystem> abfsFileSystemGenerator(
 
 void registerAbfsFileSystem() {
 #ifdef VELOX_ENABLE_ABFS
-  LOG(INFO) << "Register ABFS";
   registerFileSystem(isAbfsFile, std::function(abfsFileSystemGenerator));
 #endif
 }

@@ -63,15 +63,22 @@ function install_build_prerequisites {
   ${SUDO} apt update
   # The is an issue on 22.04 where a version conflict prevents glog install,
   # installing libunwind first fixes this.
-  ${SUDO} apt install -y libunwind-dev
+  
   ${SUDO} apt install -y \
     build-essential \
     python3-pip \
     ccache \
+    yasm \
+    uuid-dev \
+    libuuid1 \
+    libgsasl7-dev \
+    libkrb5-dev \
+    libxml2-dev \
+    libiberty-dev \
+    *thrift* \
     curl \
     ninja-build \
     checkinstall \
-    git \
     wget
 
   # Install to /usr/local to make it available to all users.
@@ -94,7 +101,6 @@ function install_velox_deps_from_apt {
     libgoogle-glog-dev \
     libbz2-dev \
     libgflags-dev \
-    libgmock-dev \
     libevent-dev \
     liblz4-dev \
     libzstd-dev \
@@ -130,6 +136,17 @@ function install_boost {
       ./bootstrap.sh --prefix=/usr/local
       ${SUDO} ./b2 "-j$(nproc)" -d0 install threading=multi --without-python
     fi
+  )
+}
+
+function install_protobuf {
+  wget_and_untar https://github.com/protocolbuffers/protobuf/releases/download/v21.4/protobuf-all-21.4.tar.gz protobuf
+  (
+    cd protobuf
+    ./configure  CXXFLAGS="-fPIC"  --prefix=/usr/local
+    make "-j$(nproc)"
+    sudo make install
+    sudo ldconfig
   )
 }
 
@@ -227,13 +244,12 @@ function install_velox_deps {
   run_and_time install_fmt
   run_and_time install_boost
   run_and_time install_folly
+  run_and_time install_protobuf
   run_and_time install_fizz
   run_and_time install_wangle
   run_and_time install_mvfst
   run_and_time install_fbthrift
-  run_and_time install_conda
   run_and_time install_duckdb
-  run_and_time install_arrow
 }
 
 function install_apt_deps {

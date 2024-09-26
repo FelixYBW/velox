@@ -24,4 +24,6 @@ target_link_libraries(
     fmt::fmt
     velox_time
     GTest::gtest
-    GTest::gtest_main)
+    GTest::gtest_main
+    glog::glog
+    gflags::gflags)
