@@ -574,7 +574,8 @@ void Spiller::spill(const RowContainerIterator* startRowIter) {
   checkEmptySpillRuns();
 }
 
-void Spiller::spill(std::vector<char*>& rows) {
+template <typename VectorType>
+void Spiller::spill(VectorType& rows) {
   CHECK_NOT_FINALIZED();
   VELOX_CHECK_EQ(type_, Type::kOrderByOutput);
   VELOX_CHECK(!rows.empty());
@@ -697,8 +698,8 @@ bool Spiller::fillSpillRuns(RowContainerIterator* iterator) {
 
   return lastRun;
 }
-
-void Spiller::fillSpillRun(std::vector<char*>& rows) {
+template <typename VectorType>
+void Spiller::fillSpillRun(VectorType& rows) {
   VELOX_CHECK_EQ(bits_.numPartitions(), 1);
   checkEmptySpillRuns();
   uint64_t execTimeNs{0};
@@ -747,4 +748,12 @@ std::string Spiller::typeName(Type type) {
 common::SpillStats Spiller::stats() const {
   return spillStats_->copy();
 }
+
+
+template void Spiller::fillSpillRun(std::vector<char*>&);
+template void Spiller::fillSpillRun(std::vector<char*,  memory::StlAllocator<char*>>&);
+
+template void Spiller::spill(std::vector<char*>&);
+template void Spiller::spill(std::vector<char*,  memory::StlAllocator<char*>>&);
+
 } // namespace facebook::velox::exec

@@ -107,12 +107,16 @@ void OrderBy::reclaim(
 }
 
 void OrderBy::noMoreInput() {
+  std::cerr << " xgbtck sort no more input from orderby" << std::endl;
+  std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
   Operator::noMoreInput();
   sortBuffer_->noMoreInput();
+
+  std::cerr << " xgbtck sort no more input after sortbuffer" << std::endl;
+  std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
+
   first_=true;
   maxOutputRows_ = outputBatchRows(sortBuffer_->estimateOutputRowSize());
-  std::cerr << " xgbtck sort no more input " << std::endl;
-  std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
   //je_gluten_malloc_stats_print(NULL, NULL, NULL);
 }
 

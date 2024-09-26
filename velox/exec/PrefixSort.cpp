@@ -215,7 +215,8 @@ void PrefixSort::extractRowToPrefix(char* row, char* prefix) {
   getAddressFromPrefix(prefix) = row;
 }
 
-void PrefixSort::sortInternal(std::vector<char*>& rows) {
+template <typename VectorType>
+void PrefixSort::sortInternal(VectorType& rows) {
   const auto numRows = rows.size();
   const auto entrySize = sortLayout_.entrySize;
   memory::ContiguousAllocation prefixAllocation;
@@ -253,5 +254,8 @@ void PrefixSort::sortInternal(std::vector<char*>& rows) {
     rows[i] = getAddressFromPrefix(prefixes + i * entrySize);
   }
 }
+
+template void PrefixSort::sortInternal(std::vector<char*>& rows);
+template void PrefixSort::sortInternal(std::vector<char*,  memory::StlAllocator<char*>>& rows);
 
 } // namespace facebook::velox::exec

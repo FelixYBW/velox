@@ -16,6 +16,7 @@
 
 #include "SortBuffer.h"
 #include "velox/exec/MemoryReclaimer.h"
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -34,7 +35,8 @@ SortBuffer::SortBuffer(
       nonReclaimableSection_(nonReclaimableSection),
       prefixSortConfig_(prefixSortConfig),
       spillConfig_(spillConfig),
-      spillStats_(spillStats)) {
+      spillStats_(spillStats),
+      sortedRows_(0, memory::StlAllocator<char*>(*pool)) {
   VELOX_CHECK_GE(input_->size(), sortCompareFlags_.size());
   VELOX_CHECK_GT(sortCompareFlags_.size(), 0);
   VELOX_CHECK_EQ(sortColumnIndices.size(), sortCompareFlags_.size());
@@ -100,6 +102,14 @@ void SortBuffer::addInput(const VectorPtr& input) {
 
 void SortBuffer::noMoreInput() {
   VELOX_CHECK(!noMoreInput_);
+
+  //It may trigger spill, make sure it's triggered before noMoreInput_ is set
+  if (spiller_ == nullptr) {
+    std::cerr << "xgbtck sortbuffer no spill yet" << std::endl;
+    sortedRows_.resize(numInputRows_);
+    std::cerr << "xgbtck sortbuffer after sort buffer" << std::endl;
+  }
+
   noMoreInput_ = true;
 
   // No data.
@@ -107,24 +117,11 @@ void SortBuffer::noMoreInput() {
     return;
   }
 
-  //It may trigger spill
-  {
-    memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
-    // make sure the sortedRows_.resize can success.
-    if (!pool_->maybeReserve(numInputRows_ * sizeof(char*))) {
-      LOG(WARNING) << "Failed to reserve " << numInputRows_ * sizeof(char*)
-              << " for sortedRows_.resize () from memory pool " << pool()->name()
-              << ", usage: " << succinctBytes(pool()->usedBytes())
-              << ", reservation: " << succinctBytes(pool()->reservedBytes());
-    }
-  }
-
   if (spiller_ == nullptr) {
     VELOX_CHECK_EQ(numInputRows_, data_->numRows());
     updateEstimatedOutputRowSize();
     // Sort the pointers to the rows in RowContainer (data_) instead of sorting
     // the rows.
-    sortedRows_.resize(numInputRows_);
     RowContainerIterator iter;
     data_->listRows(&iter, numInputRows_, sortedRows_.data());
     PrefixSort::sort(
@@ -269,6 +266,7 @@ void SortBuffer::spillInput() {
   }
   spiller_->spill();
   data_->clear();
+  sortedRows_.clear();
 }
 
 void SortBuffer::spillOutput() {
@@ -287,8 +285,8 @@ void SortBuffer::spillOutput() {
       spillerStoreType_,
       spillConfig_,
       spillStats_);
-  auto spillRows = std::vector<char*>(
-      sortedRows_.begin() + numOutputRows_, sortedRows_.end());
+  auto spillRows = std::vector<char*,  memory::StlAllocator<char*>>(
+      sortedRows_.begin() + numOutputRows_, sortedRows_.end(), memory::StlAllocator<char*>(*memory::spillMemoryPool()));
   spiller_->spill(spillRows);
   data_->clear();
   sortedRows_.clear();
