@@ -22,6 +22,8 @@
 #include "velox/exec/Aggregate.h"
 #include "velox/exec/HashJoinBridge.h"
 #include "velox/external/timsort/TimSort.hpp"
+#include <iostream>
+#include <algorithm>
 
 using facebook::velox::common::testutil::TestValue;
 
@@ -684,7 +686,7 @@ bool Spiller::fillSpillRuns(RowContainerIterator* iterator) {
         spillRuns_[partition].rows.push_back(rows[i]);
         spillRuns_[partition].numBytes += container_->rowSize(rows[i]);
       }
-
+      
       totalRows += numRows;
       if (maxSpillRunRows_ > 0 && totalRows >= maxSpillRunRows_) {
         break;

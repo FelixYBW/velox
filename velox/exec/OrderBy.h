@@ -66,5 +66,6 @@ class OrderBy : public Operator {
   std::unique_ptr<SortBuffer> sortBuffer_;
   bool finished_ = false;
   vector_size_t maxOutputRows_;
+  bool first_ = true;
 };
 } // namespace facebook::velox::exec

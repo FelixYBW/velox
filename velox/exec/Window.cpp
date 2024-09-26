@@ -44,16 +44,16 @@ Window::Window(
       spillConfig_.has_value() ? &spillConfig_.value() : nullptr;
   if (windowNode->inputsSorted()) {
     if (supportRowsStreaming()) {
-      std::cout << "xgbtck streaming window " << std::endl;
+      std::cout << "xgbtck initialize streaming window " << std::endl;
       windowBuild_ = std::make_unique<RowsStreamingWindowBuild>(
           windowNode_, pool(), spillConfig, &nonReclaimableSection_);
     } else {
-      std::cout << "xgbtck partition window " << std::endl;
+      std::cout << "xgbtck initialize partition window " << std::endl;
       windowBuild_ = std::make_unique<PartitionStreamingWindowBuild>(
           windowNode, pool(), spillConfig, &nonReclaimableSection_);
     }
   } else {
-    std::cout << "xgbtck sort window " << std::endl;
+    std::cout << "xgbtck initialize sort window " << std::endl;
     windowBuild_ = std::make_unique<SortWindowBuild>(
         windowNode, pool(), spillConfig, &nonReclaimableSection_, &spillStats_);
   }

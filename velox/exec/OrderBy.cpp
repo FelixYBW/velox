@@ -17,6 +17,11 @@
 #include "velox/exec/OperatorUtils.h"
 #include "velox/exec/Task.h"
 #include "velox/vector/FlatVector.h"
+#include <iostream>
+#include <jemalloc/jemalloc.h>
+
+extern uint64_t researved_size;
+bool second_stage=false;
 
 namespace facebook::velox::exec {
 
@@ -71,6 +76,14 @@ OrderBy::OrderBy(
 }
 
 void OrderBy::addInput(RowVectorPtr input) {
+  if (first_) {
+    std::cerr << " xgbtck sort start input " << std::endl;
+    std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
+    //je_gluten_malloc_stats_print(NULL, NULL, NULL);
+    first_ = false;
+    second_stage=true;
+  }
+
   sortBuffer_->addInput(input);
 }
 
@@ -80,18 +93,27 @@ void OrderBy::reclaim(
   VELOX_CHECK(canReclaim());
   VELOX_CHECK(!nonReclaimableSection_);
 
+  std::cerr << " xgbtck sort spill start researved_size = " << researved_size << std::endl;
+  std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
+  //je_gluten_malloc_stats_print(NULL, NULL, NULL);
   // TODO: support fine-grain disk spilling based on 'targetBytes' after
   // having row container memory compaction support later.
   sortBuffer_->spill();
 
   // Release the minimum reserved memory.
   pool()->release();
+  std::cerr << " xgbtck spill finished researved_size = " << researved_size << std::endl;
+  std::cerr << pool()->root()->treeMemoryUsage() << std::endl; 
 }
 
 void OrderBy::noMoreInput() {
   Operator::noMoreInput();
   sortBuffer_->noMoreInput();
+  first_=true;
   maxOutputRows_ = outputBatchRows(sortBuffer_->estimateOutputRowSize());
+  std::cerr << " xgbtck sort no more input " << std::endl;
+  std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
+  //je_gluten_malloc_stats_print(NULL, NULL, NULL);
 }
 
 RowVectorPtr OrderBy::getOutput() {

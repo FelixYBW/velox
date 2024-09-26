@@ -34,7 +34,7 @@ SortBuffer::SortBuffer(
       nonReclaimableSection_(nonReclaimableSection),
       prefixSortConfig_(prefixSortConfig),
       spillConfig_(spillConfig),
-      spillStats_(spillStats) {
+      spillStats_(spillStats)) {
   VELOX_CHECK_GE(input_->size(), sortCompareFlags_.size());
   VELOX_CHECK_GT(sortCompareFlags_.size(), 0);
   VELOX_CHECK_EQ(sortColumnIndices.size(), sortCompareFlags_.size());
@@ -105,6 +105,18 @@ void SortBuffer::noMoreInput() {
   // No data.
   if (numInputRows_ == 0) {
     return;
+  }
+
+  //It may trigger spill
+  {
+    memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
+    // make sure the sortedRows_.resize can success.
+    if (!pool_->maybeReserve(numInputRows_ * sizeof(char*))) {
+      LOG(WARNING) << "Failed to reserve " << numInputRows_ * sizeof(char*)
+              << " for sortedRows_.resize () from memory pool " << pool()->name()
+              << ", usage: " << succinctBytes(pool()->usedBytes())
+              << ", reservation: " << succinctBytes(pool()->reservedBytes());
+    }
   }
 
   if (spiller_ == nullptr) {

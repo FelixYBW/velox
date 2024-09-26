@@ -17,6 +17,9 @@
 #include "velox/exec/RowsStreamingWindowBuild.h"
 #include "velox/common/testutil/TestValue.h"
 #include <iostream>
+#include <jemalloc/jemalloc.h>
+
+extern uint64_t researved_size;
 
 namespace facebook::velox::exec {
 
@@ -55,6 +58,13 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
 }
 
 void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
+  if (first_) {
+    std::cerr << "xgbtck rowstreamingwindow start input " << std::endl;
+    std::cerr << pool_->root()->treeMemoryUsage() << std::endl;   
+    first_ = false;
+    //je_gluten_malloc_stats_print(NULL, NULL, NULL);
+  }
+
   for (auto i = 0; i < inputChannels_.size(); ++i) {
     decodedInputVectors_[i].decode(*input->childAt(inputChannels_[i]));
   }
@@ -81,15 +91,18 @@ void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
 }
 
 void RowsStreamingWindowBuild::noMoreInput() {
-  std::cout << "xgbtck rowstreamingwindow no more input " << std::endl;
-  std::cout << this->pool_->root()->treeMemoryUsage() << std::endl;
-
+  std::cerr << "xgbtck rowstreamingwindow no more input " << std::endl;
+  std::cerr << pool_->root()->treeMemoryUsage() << std::endl;
+  first_=true;
+  //je_gluten_malloc_stats_print(NULL, NULL, NULL);
   addPartitionInputs(true);
 }
 
 std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
   VELOX_CHECK(hasNextPartition());
-  return windowPartitions_[++outputPartition_];
+  outputPartition_++;
+  std::shared_ptr<WindowPartition> output = windowPartitions_[outputPartition_];
+  return output;
 }
 
 bool RowsStreamingWindowBuild::hasNextPartition() {

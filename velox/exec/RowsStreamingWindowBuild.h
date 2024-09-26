@@ -76,7 +76,9 @@ class RowsStreamingWindowBuild : public WindowBuild {
   vector_size_t inputPartition_ = 0;
 
   // Holds all the built window partitions.
-  std::vector<std::shared_ptr<WindowPartition>> windowPartitions_;
+  std::vector<std::shared_ptr<WindowPartition>, memory::StlAllocator<char*>> windowPartitions_;
+  
+  bool first_ = true;
 };
 
 } // namespace facebook::velox::exec
