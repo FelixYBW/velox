@@ -106,8 +106,14 @@ void SortBuffer::noMoreInput() {
   //It may trigger spill, make sure it's triggered before noMoreInput_ is set
   if (spiller_ == nullptr) {
     std::cerr << "xgbtck sortbuffer no spill yet" << std::endl;
-    sortedRows_.resize(numInputRows_);
+    std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
+
+    //force to trigger spill
+    memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
+    pool_->maybeReserve(numInputRows_*sizeof(char*));
+    
     std::cerr << "xgbtck sortbuffer after sort buffer" << std::endl;
+    std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
   }
 
   noMoreInput_ = true;
@@ -122,6 +128,7 @@ void SortBuffer::noMoreInput() {
     updateEstimatedOutputRowSize();
     // Sort the pointers to the rows in RowContainer (data_) instead of sorting
     // the rows.
+    sortedRows_.resize(numInputRows_);
     RowContainerIterator iter;
     data_->listRows(&iter, numInputRows_, sortedRows_.data());
     PrefixSort::sort(
@@ -164,6 +171,9 @@ void SortBuffer::spill() {
   if (data_->numRows() == 0) {
     return;
   }
+  std::cerr << " xgbtck sort spill start researved_size = " << std::endl;
+  std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
+
   updateEstimatedOutputRowSize();
 
   if (sortedRows_.empty()) {
@@ -171,6 +181,8 @@ void SortBuffer::spill() {
   } else {
     spillOutput();
   }
+  std::cerr << " xgbtck spill finished researved_size = " << std::endl;
+  std::cerr << pool()->root()->treeMemoryUsage() << std::endl; 
 }
 
 std::optional<uint64_t> SortBuffer::estimateOutputRowSize() const {
@@ -267,6 +279,7 @@ void SortBuffer::spillInput() {
   spiller_->spill();
   data_->clear();
   sortedRows_.clear();
+  sortedRows_.shrink_to_fit();
 }
 
 void SortBuffer::spillOutput() {
@@ -290,6 +303,7 @@ void SortBuffer::spillOutput() {
   spiller_->spill(spillRows);
   data_->clear();
   sortedRows_.clear();
+  sortedRows_.shrink_to_fit();
   // Finish right after spilling as the output spiller only spills at most
   // once.
   finishSpill();

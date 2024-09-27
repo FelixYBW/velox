@@ -102,8 +102,6 @@ void OrderBy::reclaim(
 
   // Release the minimum reserved memory.
   pool()->release();
-  std::cerr << " xgbtck spill finished researved_size = " << researved_size << std::endl;
-  std::cerr << pool()->root()->treeMemoryUsage() << std::endl; 
 }
 
 void OrderBy::noMoreInput() {
