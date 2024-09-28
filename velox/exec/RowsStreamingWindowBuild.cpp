@@ -29,11 +29,13 @@ RowsStreamingWindowBuild::RowsStreamingWindowBuild(
     const common::SpillConfig* spillConfig,
     tsan_atomic<bool>* nonReclaimableSection)
     : WindowBuild(windowNode, pool, spillConfig, nonReclaimableSection),
-    inputRows_(0, memory::StlAllocator<char*>(*pool)),
-    windowPartitions_(0, memory::StlAllocator<char*>(*pool)){
+    inputRows_(0, memory::StlAllocator<char*>(*pool)){
   velox::common::testutil::TestValue::adjust(
       "facebook::velox::exec::RowsStreamingWindowBuild::RowsStreamingWindowBuild",
       this);
+  // inversedInputChannels_ and sortKeyInfo_ are initialized in the base class.
+  // setup the fist windowpartition
+  windowPartitions_.emplace_back(std::make_shared<WindowPartition>(pool_, data_.get(), inversedInputChannels_, sortKeyInfo_));
 }
 
 void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
@@ -41,29 +43,26 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
     return;
   }
 
-  if (windowPartitions_.size() <= inputPartition_) {
-    windowPartitions_.push_back(std::allocate_shared<WindowPartition>(
-        memory::StlAllocator<char*>(*pool_),
-        pool_, data_.get(), inversedInputChannels_, sortKeyInfo_));
-  }
-
-  windowPartitions_[inputPartition_]->addRows(inputRows_);
+  windowPartitions_.back()->addRows(inputRows_);
 
   if (finished) {
-    windowPartitions_[inputPartition_]->setComplete();
+    windowPartitions_.back()->setComplete();
     ++inputPartition_;
+    // Create a new partition for the next input.
+    windowPartitions_.emplace_back(std::make_shared<WindowPartition>(pool_, data_.get(), inversedInputChannels_, sortKeyInfo_));
   }
 
   inputRows_.clear();
+  inputRows_.shrink_to_fit();
+}
+bool RowsStreamingWindowBuild::needsInput() {
+  // No partitions are available or the currentPartition is the last available
+  // one, so can consume input rows.
+  return windowPartitions_.empty() ||
+      outputPartition_ == inputPartition_;
 }
 
 void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
-  if (first_) {
-    std::cerr << "xgbtck rowstreamingwindow start input " << std::endl;
-    std::cerr << pool_->root()->treeMemoryUsage() << std::endl;   
-    first_ = false;
-    //je_gluten_malloc_stats_print(NULL, NULL, NULL);
-  }
 
   for (auto i = 0; i < inputChannels_.size(); ++i) {
     decodedInputVectors_[i].decode(*input->childAt(inputChannels_[i]));
@@ -91,9 +90,6 @@ void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
 }
 
 void RowsStreamingWindowBuild::noMoreInput() {
-  std::cerr << "xgbtck rowstreamingwindow no more input " << std::endl;
-  std::cerr << pool_->root()->treeMemoryUsage() << std::endl;
-  first_=true;
   //je_gluten_malloc_stats_print(NULL, NULL, NULL);
   addPartitionInputs(true);
 }
@@ -101,13 +97,14 @@ void RowsStreamingWindowBuild::noMoreInput() {
 std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
   VELOX_CHECK(hasNextPartition());
   outputPartition_++;
-  std::shared_ptr<WindowPartition> output = windowPartitions_[outputPartition_];
+  std::shared_ptr<WindowPartition> output = std::move(windowPartitions_.front());
+  windowPartitions_.pop_front();
   return output;
 }
 
 bool RowsStreamingWindowBuild::hasNextPartition() {
   return !windowPartitions_.empty() &&
-      outputPartition_ + 2 <= windowPartitions_.size();
+      outputPartition_ + 1 <= inputPartition_;
 }
 
 } // namespace facebook::velox::exec

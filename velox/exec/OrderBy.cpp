@@ -76,14 +76,6 @@ OrderBy::OrderBy(
 }
 
 void OrderBy::addInput(RowVectorPtr input) {
-  if (first_) {
-    std::cerr << " xgbtck sort start input " << std::endl;
-    std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
-    //je_gluten_malloc_stats_print(NULL, NULL, NULL);
-    first_ = false;
-    second_stage=true;
-  }
-
   sortBuffer_->addInput(input);
 }
 
@@ -93,8 +85,6 @@ void OrderBy::reclaim(
   VELOX_CHECK(canReclaim());
   VELOX_CHECK(!nonReclaimableSection_);
 
-  std::cerr << " xgbtck sort spill start researved_size = " << researved_size << std::endl;
-  std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
   //je_gluten_malloc_stats_print(NULL, NULL, NULL);
   // TODO: support fine-grain disk spilling based on 'targetBytes' after
   // having row container memory compaction support later.
@@ -105,13 +95,8 @@ void OrderBy::reclaim(
 }
 
 void OrderBy::noMoreInput() {
-  std::cerr << " xgbtck sort no more input from orderby" << std::endl;
-  std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
   Operator::noMoreInput();
   sortBuffer_->noMoreInput();
-
-  std::cerr << " xgbtck sort no more input after sortbuffer" << std::endl;
-  std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
 
   first_=true;
   maxOutputRows_ = outputBatchRows(sortBuffer_->estimateOutputRowSize());

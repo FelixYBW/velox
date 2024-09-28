@@ -105,15 +105,9 @@ void SortBuffer::noMoreInput() {
 
   //It may trigger spill, make sure it's triggered before noMoreInput_ is set
   if (spiller_ == nullptr) {
-    std::cerr << "xgbtck sortbuffer no spill yet" << std::endl;
-    std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
-
     //force to trigger spill
     memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
     pool_->maybeReserve(numInputRows_*sizeof(char*));
-    
-    std::cerr << "xgbtck sortbuffer after sort buffer" << std::endl;
-    std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
   }
 
   noMoreInput_ = true;
@@ -171,9 +165,6 @@ void SortBuffer::spill() {
   if (data_->numRows() == 0) {
     return;
   }
-  std::cerr << " xgbtck sort spill start researved_size = " << std::endl;
-  std::cerr << this->pool()->root()->treeMemoryUsage() << std::endl;
-
   updateEstimatedOutputRowSize();
 
   if (sortedRows_.empty()) {
@@ -181,8 +172,6 @@ void SortBuffer::spill() {
   } else {
     spillOutput();
   }
-  std::cerr << " xgbtck spill finished researved_size = " << std::endl;
-  std::cerr << pool()->root()->treeMemoryUsage() << std::endl; 
 }
 
 std::optional<uint64_t> SortBuffer::estimateOutputRowSize() const {
