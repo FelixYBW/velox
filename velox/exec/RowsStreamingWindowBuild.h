@@ -51,12 +51,7 @@ class RowsStreamingWindowBuild : public WindowBuild {
 
   std::shared_ptr<WindowPartition> nextPartition() override;
 
-  bool needsInput() override {
-    // No partitions are available or the currentPartition is the last available
-    // one, so can consume input rows.
-    return windowPartitions_.empty() ||
-        outputPartition_ == windowPartitions_.size() - 1;
-  }
+  bool needsInput() override;
 
  private:
   // Adds input rows to the current partition, or creates a new partition if it
@@ -73,13 +68,13 @@ class RowsStreamingWindowBuild : public WindowBuild {
   char* previousRow_ = nullptr;
 
   // Point to the current output partition if not -1.
-  vector_size_t outputPartition_ = -1;
+  vector_size_t outputPartition_ = 0;
 
   // Current input partition that receives inputs.
   vector_size_t inputPartition_ = 0;
 
   // Holds all the built window partitions.
-  std::vector<std::shared_ptr<WindowPartition>> windowPartitions_;
+  std::deque<std::shared_ptr<WindowPartition>> windowPartitions_;
 };
 
 } // namespace facebook::velox::exec
