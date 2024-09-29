@@ -25,8 +25,9 @@ namespace facebook::velox::exec {
 
 namespace detail {
 
+template <typename VectorType>
 FOLLY_ALWAYS_INLINE void stdSort(
-    std::vector<char*>& rows,
+    VectorType& rows,
     RowContainer* rowContainer,
     const std::vector<CompareFlags>& compareFlags) {
   std::sort(
@@ -119,8 +120,9 @@ class PrefixSort {
   ///
   /// @param rows The result of RowContainer::listRows(), assuming that the
   /// caller (SortBuffer etc.) has already got the result.
+  template <typename VectorType>
   FOLLY_ALWAYS_INLINE static void sort(
-      std::vector<char*>& rows,
+      VectorType& rows,
       memory::MemoryPool* pool,
       RowContainer* rowContainer,
       const std::vector<CompareFlags>& compareFlags,
@@ -144,7 +146,8 @@ class PrefixSort {
   }
 
  private:
-  void sortInternal(std::vector<char*>& rows);
+  template <typename VectorType>
+  void sortInternal(VectorType& rows);
 
   int compareAllNormalizedKeys(char* left, char* right);
 
