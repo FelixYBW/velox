@@ -499,6 +499,7 @@ void DwrfRowReader::checkSkipStrides(uint64_t strideSize) {
     ++currentStride;
     ++skippedStrides_;
   }
+  processedStrides_++;
   if (foundStridesToSkip && currentRowInStripe_ < rowsInCurrentStripe_) {
     getSelectiveColumnReader()->seekToRowGroup(currentStride);
   }

@@ -1067,6 +1067,7 @@ class ParquetRowReader::Impl {
 
   void updateRuntimeStats(dwio::common::RuntimeStatistics& stats) const {
     stats.skippedStrides += rowGroups_.size() - rowGroupIds_.size();
+    stats.processedStrides += rowGroupIds_.size();
   }
 
   void resetFilterCaches() {
