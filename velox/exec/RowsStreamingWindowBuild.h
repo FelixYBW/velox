@@ -79,6 +79,8 @@ class RowsStreamingWindowBuild : public WindowBuild {
 
   // Holds all the built window partitions.
   std::deque<std::shared_ptr<WindowPartition>> windowPartitions_;
+
+  velox::memory::MemoryPool* pool_;
 };
 
 } // namespace facebook::velox::exec

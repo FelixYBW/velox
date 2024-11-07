@@ -17,6 +17,7 @@
 #include "velox/exec/RowsStreamingWindowBuild.h"
 #include "velox/common/testutil/TestValue.h"
 #include "velox/exec/WindowFunction.h"
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -45,6 +46,7 @@ RowsStreamingWindowBuild::RowsStreamingWindowBuild(
   // Create the first WindowPartition.
   windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
       data_.get(), inversedInputChannels_, sortKeyInfo_));
+  pool_ = pool;
 }
 
 void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
@@ -97,6 +99,16 @@ void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
     inputRows_.push_back(newRow);
     previousRow_ = newRow;
   }
+  static int v = 0;
+  if ( (pool_->reservedBytes()>1000000000L) &&
+(v++ % 100 == 0)) {
+    std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
+    std::cout << "addinput " << this->pool_->root()->treeMemoryUsage() << std::endl;
+    std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
+    std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
+      std::cout << "windowPartitions_ size is " << p->numRows() << std::endl;
+    });
+  }
 }
 
 void RowsStreamingWindowBuild::noMoreInput() {
@@ -108,6 +120,17 @@ std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
   outputPartition_++;
   auto output = std::move(windowPartitions_.front());
   windowPartitions_.pop_front();
+  static int v = 0;
+  if ( (pool_->reservedBytes()>1000000000L) &&
+(v++ % 100 == 0)) {
+    std::cout << "nextPartition " << this->pool_->root()->treeMemoryUsage() << std::endl;
+    std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
+    std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
+    std::cout << "output size is " << output->numRows() << std::endl;
+    std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
+      std::cout << "windowPartitions_ size is " << p->numRows() << std::endl;
+    });
+  }
   return output;
 }
 
