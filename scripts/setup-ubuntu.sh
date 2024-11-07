@@ -66,19 +66,34 @@ function install_build_prerequisites {
   ${SUDO} apt update
   # The is an issue on 22.04 where a version conflict prevents glog install,
   # installing libunwind first fixes this.
-  ${SUDO} apt install -y libunwind-dev
+  
   ${SUDO} apt install -y \
     build-essential \
     python3-pip \
     ccache \
+    yasm \
+    uuid-dev \
+    libuuid1 \
+    libgsasl7-dev \
+    libkrb5-dev \
+    libxml2-dev \
+    libiberty-dev \
+    *thrift* \
     curl \
     ninja-build \
     checkinstall \
-    git \
     wget
 
   # Install to /usr/local to make it available to all users.
   ${SUDO} pip3 install cmake==3.28.3
+  VERSION=`cat /etc/os-release | grep VERSION_ID`
+  if [[ $VERSION =~ "20.04" ]]; then
+    sudo apt install -y software-properties-common
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+    sudo apt update && sudo apt install -y gcc-11 g++-11
+    sudo ln -sf /usr/bin/gcc-11 /usr/bin/gcc
+    sudo ln -sf /usr/bin/g++-11 /usr/bin/g++
+  fi
 
   if [[ ${USE_CLANG} != "false" ]]; then
     install_clang15
@@ -97,7 +112,6 @@ function install_velox_deps_from_apt {
     libgoogle-glog-dev \
     libbz2-dev \
     libgflags-dev \
-    libgmock-dev \
     libevent-dev \
     liblz4-dev \
     libzstd-dev \
@@ -258,10 +272,8 @@ function install_velox_deps {
   run_and_time install_wangle
   run_and_time install_mvfst
   run_and_time install_fbthrift
-  run_and_time install_conda
   run_and_time install_duckdb
   run_and_time install_stemmer
-  run_and_time install_arrow
 }
 
 function install_apt_deps {

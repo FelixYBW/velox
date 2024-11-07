@@ -403,7 +403,7 @@ resolve_dependency(Boost 1.77.0 COMPONENTS ${BOOST_INCLUDE_LIBRARIES})
 # for reference. find_package(range-v3)
 
 set_source(gflags)
-resolve_dependency(gflags COMPONENTS ${VELOX_GFLAGS_TYPE})
+resolve_dependency(gflags)
 if(NOT TARGET gflags::gflags)
   # This is a bit convoluted, but we want to be able to use gflags::gflags as a
   # target even when velox is built as a subproject which uses
