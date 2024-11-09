@@ -58,6 +58,10 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
 
   if (finished) {
     windowPartitions_.back()->setComplete();
+    if (outputPartition_ == inputPartition_){
+      //if the output partition is the input partition, it's already output so we need pop the output partition.
+      windowPartitions_.pop_front();
+    }
     ++inputPartition_;
     // Create a new partition for the next input.
     windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
@@ -118,8 +122,11 @@ void RowsStreamingWindowBuild::noMoreInput() {
 std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
   VELOX_CHECK(hasNextPartition());
   outputPartition_++;
-  auto output = std::move(windowPartitions_.front());
-  windowPartitions_.pop_front();
+  auto output = windowPartitions_.front();
+  // it's possible the output partition is the input partition, so we don't pop
+  if (outputPartition_ < inputPartition_)
+    windowPartitions_.pop_front();
+
   static int v = 0;
   if ( (pool_->reservedBytes()>1000000000L) &&
 (v++ % 100 == 0)) {
@@ -135,7 +142,8 @@ std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
 }
 
 bool RowsStreamingWindowBuild::hasNextPartition() {
-  return !windowPartitions_.empty() && outputPartition_ + 1 <= inputPartition_;
+  return !windowPartitions_.empty();
 }
 
 } // namespace facebook::velox::exec
+
