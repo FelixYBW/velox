@@ -53,6 +53,12 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
   if (inputRows_.empty()) {
     return;
   }
+  if ( outputPartition_ + 1 == inputPartition_)
+  {
+    // Create a new partition for the next input.
+    windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
+        data_.get(), inversedInputChannels_, sortKeyInfo_));
+  }
 
   windowPartitions_.back()->addRows(inputRows_);
 
@@ -63,9 +69,6 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
       windowPartitions_.pop_front();
     }
     ++inputPartition_;
-    // Create a new partition for the next input.
-    windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
-        data_.get(), inversedInputChannels_, sortKeyInfo_));
   }
 
   inputRows_.clear();
@@ -104,15 +107,16 @@ void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
     previousRow_ = newRow;
   }
   static int v = 0;
-  if ( (pool_->reservedBytes()>1000000000L) &&
-(v++ % 100 == 0)) {
+//  if ( (pool_->reservedBytes()>1000000000L) &&
+//(v++ % 100 == 0)) {
+    std::cout << " addinput " << std::endl;
     std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
-    std::cout << "addinput " << this->pool_->root()->treeMemoryUsage() << std::endl;
+    //std::cout << "addinput " << this->pool_->root()->treeMemoryUsage() << std::endl;
     std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
     std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
-      std::cout << "windowPartitions_ size is " << p->numRows() << std::endl;
+      std::cout << "partition size is " << p->numRows() << std::endl;
     });
-  }
+//  }
 }
 
 void RowsStreamingWindowBuild::noMoreInput() {
@@ -128,21 +132,23 @@ std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
     windowPartitions_.pop_front();
 
   static int v = 0;
-  if ( (pool_->reservedBytes()>1000000000L) &&
-(v++ % 100 == 0)) {
-    std::cout << "nextPartition " << this->pool_->root()->treeMemoryUsage() << std::endl;
+//  if ( (pool_->reservedBytes()>1000000000L) &&
+//(v++ % 100 == 0)) {
+    std::cout << " next partition " << std::endl;
+    //std::cout << "nextPartition " << this->pool_->root()->treeMemoryUsage() << std::endl;
     std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
     std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
     std::cout << "output size is " << output->numRows() << std::endl;
     std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
-      std::cout << "windowPartitions_ size is " << p->numRows() << std::endl;
+      std::cout << "partition size is " << p->numRows() << std::endl;
     });
-  }
+//  }
   return output;
 }
 
 bool RowsStreamingWindowBuild::hasNextPartition() {
-  return !windowPartitions_.empty();
+  std::cout << "has next partition windowpartition front numrows = " << windowPartitions_.front()->numRows() << std::endl;
+  return !windowPartitions_.empty() && (windowPartitions_.front()->numRows() > 0);
 }
 
 } // namespace facebook::velox::exec
