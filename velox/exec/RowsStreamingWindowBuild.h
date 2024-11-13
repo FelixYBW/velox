@@ -51,11 +51,7 @@ class RowsStreamingWindowBuild : public WindowBuild {
 
   std::shared_ptr<WindowPartition> nextPartition() override;
 
-  bool needsInput() override {
-    // No partitions are available or the currentPartition is the last available
-    // one, so can consume input rows.
-    return windowPartitions_.empty() || outputPartition_ == inputPartition_;
-  }
+  inline bool needsInput() override;
 
  private:
   // Adds input rows to the current partition, or creates a new partition if it
