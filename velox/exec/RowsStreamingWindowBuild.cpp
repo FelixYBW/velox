@@ -46,20 +46,23 @@ RowsStreamingWindowBuild::RowsStreamingWindowBuild(
   // Create the first WindowPartition.
   windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
       data_.get(), inversedInputChannels_, sortKeyInfo_));
+  inputPartition_++;
   pool_ = pool;
 }
+bool RowsStreamingWindowBuild::needsInput() {
+  // No partitions are available or the currentPartition is the last available
+  // one, so can consume input rows.
+  return windowPartitions_.empty() || (windowPartitions_.front()->numRows() == 0);
+}
+
 
 void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
   if (inputRows_.empty()) {
     return;
   }
-  if ( outputPartition_ + 1 == inputPartition_)
-  {
-    // Create a new partition for the next input.
-    windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
-        data_.get(), inversedInputChannels_, sortKeyInfo_));
-  }
 
+//  std::cout << " add partition inputrows = " << inputRows_.size() << std::endl;
+//  std::cout << " window partitions size = " << windowPartitions_.size() << std::endl;
   windowPartitions_.back()->addRows(inputRows_);
 
   if (finished) {
@@ -67,8 +70,13 @@ void RowsStreamingWindowBuild::addPartitionInputs(bool finished) {
     if (outputPartition_ == inputPartition_){
       //if the output partition is the input partition, it's already output so we need pop the output partition.
       windowPartitions_.pop_front();
+  //    std::cout << " addpartitioninput pop partition output partition = " << outputPartition_ << " input partition = " << inputPartition_ << std::endl;
+
     }
     ++inputPartition_;
+    // Create a new partition for the next input.
+    windowPartitions_.emplace_back(std::make_shared<WindowPartition>(
+        data_.get(), inversedInputChannels_, sortKeyInfo_));
   }
 
   inputRows_.clear();
@@ -109,13 +117,13 @@ void RowsStreamingWindowBuild::addInput(RowVectorPtr input) {
   static int v = 0;
 //  if ( (pool_->reservedBytes()>1000000000L) &&
 //(v++ % 100 == 0)) {
-    std::cout << " addinput " << std::endl;
-    std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
+//    std::cout << " addinput " << std::endl;
+//    std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
     //std::cout << "addinput " << this->pool_->root()->treeMemoryUsage() << std::endl;
-    std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
-    std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
-      std::cout << "partition size is " << p->numRows() << std::endl;
-    });
+//    std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
+//    std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
+//      std::cout << "partition size is " << p->numRows() << std::endl;
+//    });
 //  }
 }
 
@@ -128,26 +136,28 @@ std::shared_ptr<WindowPartition> RowsStreamingWindowBuild::nextPartition() {
   outputPartition_++;
   auto output = windowPartitions_.front();
   // it's possible the output partition is the input partition, so we don't pop
-  if (outputPartition_ < inputPartition_)
+  if (outputPartition_ < inputPartition_){
     windowPartitions_.pop_front();
-
-  static int v = 0;
+//    std::cout << " pop front output partition = " << outputPartition_ << " input partition = " << inputPartition_ << std::endl;
+  }else{
+//    std::cout << " hold partition output partition = " << outputPartition_ << " input partition = " << inputPartition_ << std::endl;
+  }
+//  static int v = 0;
 //  if ( (pool_->reservedBytes()>1000000000L) &&
 //(v++ % 100 == 0)) {
-    std::cout << " next partition " << std::endl;
+//    std::cout << " next partition " << std::endl;
     //std::cout << "nextPartition " << this->pool_->root()->treeMemoryUsage() << std::endl;
-    std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
-    std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
-    std::cout << "output size is " << output->numRows() << std::endl;
-    std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
-      std::cout << "partition size is " << p->numRows() << std::endl;
-    });
+//    std::cout << " windowPartitions_ size is " << windowPartitions_.size() << std::endl;
+//    std::cout << "output Partition_ = " << outputPartition_ << " input partition " << inputPartition_ << std::endl;
+//    std::cout << "output size is " << output->numRows() << std::endl;
+//    std::for_each(windowPartitions_.begin(), windowPartitions_.end(), [](std::shared_ptr<WindowPartition> p) {
+//      std::cout << "partition size is " << p->numRows() << std::endl;
+//    });
 //  }
   return output;
 }
 
 bool RowsStreamingWindowBuild::hasNextPartition() {
-  std::cout << "has next partition windowpartition front numrows = " << windowPartitions_.front()->numRows() << std::endl;
   return !windowPartitions_.empty() && (windowPartitions_.front()->numRows() > 0);
 }
 
