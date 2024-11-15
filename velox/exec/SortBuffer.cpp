@@ -154,9 +154,12 @@ RowVectorPtr SortBuffer::getOutput(vector_size_t maxOutputRows) {
   if (numOutputRows_ == numInputRows_) {
     return nullptr;
   }
-
-  ensureOutputFits();
-  prepareOutput(maxOutputRows);
+  VELOX_CHECK_GT(maxOutputRows, 0);
+  VELOX_CHECK_GT(numInputRows_, numOutputRows_);
+  const vector_size_t batchSize =
+      std::min<uint64_t>(numInputRows_ - numOutputRows_, maxOutputRows);
+  ensureOutputFits(batchSize);
+  prepareOutput(batchSize);
   if (spiller_ != nullptr) {
     getOutputWithSpill();
   } else {
@@ -247,7 +250,7 @@ void SortBuffer::ensureInputFits(const VectorPtr& input) {
                << ", reservation: " << succinctBytes(pool()->reservedBytes());
 }
 
-void SortBuffer::ensureOutputFits() {
+void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
   // Check if spilling is enabled or not.
   if (spillConfig_ == nullptr) {
     return;
@@ -263,8 +266,14 @@ void SortBuffer::ensureOutputFits() {
     return;
   }
 
+  const vector_size_t numRows =
+      output_ == nullptr ? batchSize : std::max(0, batchSize - output_->size());
+  if (numRows == 0) {
+    return;
+  }
+
   const uint64_t outputBufferSizeToReserve =
-      estimatedOutputRowSize_.value() * 1.2;
+      estimatedOutputRowSize_.value() * numRows;
   {
     memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
     if (pool_->maybeReserve(outputBufferSizeToReserve)) {
@@ -373,11 +382,7 @@ void SortBuffer::spillOutput() {
   finishSpill();
 }
 
-void SortBuffer::prepareOutput(vector_size_t maxOutputRows) {
-  VELOX_CHECK_GT(maxOutputRows, 0);
-  VELOX_CHECK_GT(numInputRows_, numOutputRows_);
-  const vector_size_t batchSize =
-      std::min<uint64_t>(numInputRows_ - numOutputRows_, maxOutputRows);
+void SortBuffer::prepareOutput(vector_size_t batchSize) {
   if (output_ != nullptr) {
     VectorPtr output = std::move(output_);
     BaseVector::prepareForReuse(output, batchSize);
@@ -392,13 +397,12 @@ void SortBuffer::prepareOutput(vector_size_t maxOutputRows) {
   }
 
   if (spiller_ != nullptr) {
-    spillSources_.resize(maxOutputRows);
-    spillSourceRows_.resize(maxOutputRows);
+    spillSources_.resize(batchSize);
+    spillSourceRows_.resize(batchSize);
     prepareOutputWithSpill();
   }
 
   VELOX_CHECK_GT(output_->size(), 0);
-  VELOX_DCHECK_LE(output_->size(), maxOutputRows);
   VELOX_CHECK_LE(output_->size() + numOutputRows_, numInputRows_);
 }
 
