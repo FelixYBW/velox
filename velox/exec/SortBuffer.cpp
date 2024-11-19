@@ -16,6 +16,7 @@
 
 #include "SortBuffer.h"
 #include "velox/exec/MemoryReclaimer.h"
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -113,6 +114,7 @@ void SortBuffer::noMoreInput() {
   // It may trigger spill, make sure it's triggered before noMoreInput_ is set.
   ensureSortFits();
 
+  std::cerr << " sort buffer no more input " << pool()->root()->treeMemoryUsage() << std::endl;
   noMoreInput_ = true;
 
   // No data.
@@ -145,6 +147,13 @@ void SortBuffer::noMoreInput() {
 }
 
 RowVectorPtr SortBuffer::getOutput(vector_size_t maxOutputRows) {
+  static uint64_t lastUsed = 0;
+
+  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " get output " << std::endl;
+  }
+  
   SCOPE_EXIT {
     pool_->release();
   };
@@ -178,11 +187,14 @@ void SortBuffer::spill() {
   }
   updateEstimatedOutputRowSize();
 
+  std::cerr << " sortbuffer before spill " << pool()->root()->treeMemoryUsage() << std::endl;
+
   if (sortedRows_.empty()) {
     spillInput();
   } else {
     spillOutput();
   }
+  std::cerr << " sortbuffer after spill " << pool()->root()->treeMemoryUsage() << std::endl;
 }
 
 std::optional<uint64_t> SortBuffer::estimateOutputRowSize() const {
@@ -252,10 +264,20 @@ void SortBuffer::ensureInputFits(const VectorPtr& input) {
 
 void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
   // Check if spilling is enabled or not.
+  static uint64_t lastUsed = 0;
+  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " ensure output fits " << std::endl;
+  }
+
   if (spillConfig_ == nullptr) {
     return;
   }
-
+  
+  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " spill config " << std::endl;
+  }
   // Test-only spill path.
   if (testingTriggerSpill(pool_->name())) {
     spill();
@@ -266,6 +288,11 @@ void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
     return;
   }
 
+  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " estimatedOutputRowSize_.has_value() " << std::endl;
+  }
+
   const vector_size_t numRows =
       output_ == nullptr ? batchSize : std::max(0, batchSize - output_->size());
   if (numRows == 0) {
@@ -273,13 +300,27 @@ void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
   }
 
   const uint64_t outputBufferSizeToReserve =
-      estimatedOutputRowSize_.value() * numRows;
+      estimatedOutputRowSize_.value() * numRows *1.2;
+
+  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " before allocation " << std::endl;
+  }
+
   {
     memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
     if (pool_->maybeReserve(outputBufferSizeToReserve)) {
       return;
     }
   }
+
+  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " outputBufferSizeToReserve " << outputBufferSizeToReserve << " batch size " << numRows << std::endl;
+    std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
+    lastUsed = pool()->usedBytes();
+  }
+
   LOG(WARNING) << "Failed to reserve "
                << succinctBytes(outputBufferSizeToReserve)
                << " for memory pool " << pool_->name()
