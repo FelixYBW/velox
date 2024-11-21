@@ -149,9 +149,10 @@ void SortBuffer::noMoreInput() {
 RowVectorPtr SortBuffer::getOutput(vector_size_t maxOutputRows) {
   static uint64_t lastUsed = 0;
 
-  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
   {
-    std::cerr << " get output " << std::endl;
+    std::cerr << " get output, last usage " << lastUsed << std::endl;
+    std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
   }
   
   SCOPE_EXIT {
@@ -174,6 +175,14 @@ RowVectorPtr SortBuffer::getOutput(vector_size_t maxOutputRows) {
   } else {
     getOutputWithoutSpill();
   }
+
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
+  {
+    std::cerr << " output data , last usage " << lastUsed << std::endl;
+    std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
+    lastUsed = pool()->usedBytes();
+  }
+
   return output_;
 }
 
@@ -265,18 +274,18 @@ void SortBuffer::ensureInputFits(const VectorPtr& input) {
 void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
   // Check if spilling is enabled or not.
   static uint64_t lastUsed = 0;
-  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
   {
-    std::cerr << " ensure output fits " << std::endl;
+    std::cerr << " ensure output fits , last usage " << lastUsed << " current usage " << pool()->root()->usedBytes() << std::endl;
   }
 
   if (spillConfig_ == nullptr) {
     return;
   }
   
-  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
   {
-    std::cerr << " spill config " << std::endl;
+    std::cerr << " spill config , last usage " << lastUsed << " current usage " << pool()->root()->usedBytes()  << std::endl;
   }
   // Test-only spill path.
   if (testingTriggerSpill(pool_->name())) {
@@ -288,9 +297,9 @@ void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
     return;
   }
 
-  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
   {
-    std::cerr << " estimatedOutputRowSize_.has_value() " << std::endl;
+    std::cerr << " estimatedOutputRowSize_.has_value() , last usage " << lastUsed << " current usage " << pool()->root()->usedBytes()  << std::endl;
   }
 
   const vector_size_t numRows =
@@ -302,11 +311,15 @@ void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
   const uint64_t outputBufferSizeToReserve =
       estimatedOutputRowSize_.value() * numRows *1.2;
 
-  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
   {
-    std::cerr << " before allocation " << std::endl;
+    std::cerr << " before allocation , last usage " << lastUsed << " current usage " << pool()->root()->usedBytes()  << std::endl;
   }
 
+  if (outputBufferSizeToReserve > 1000000000LL)
+  {
+    std::cerr << " output buffer size is bigger than 1G , last usage " << lastUsed << " current usage " << pool()->root()->usedBytes()  << std::endl;
+  }
   {
     memory::ReclaimableSectionGuard guard(nonReclaimableSection_);
     if (pool_->maybeReserve(outputBufferSizeToReserve)) {
@@ -314,9 +327,9 @@ void SortBuffer::ensureOutputFits(vector_size_t batchSize) {
     }
   }
 
-  if (pool()->usedBytes() - lastUsed > 1000000000LL)
+  if (pool()->root()->usedBytes() - lastUsed > 1000000000LL)
   {
-    std::cerr << " outputBufferSizeToReserve " << outputBufferSizeToReserve << " batch size " << numRows << std::endl;
+    std::cerr << " outputBufferSizeToReserve " << outputBufferSizeToReserve << " batch size " << numRows << ", last usage " << lastUsed << " current usage " << pool()->root()->usedBytes() << std::endl;
     std::cerr << pool()->root()->treeMemoryUsage() << std::endl;
     lastUsed = pool()->usedBytes();
   }

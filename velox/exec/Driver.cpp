@@ -18,6 +18,7 @@
 
 #include "velox/common/process/TraceContext.h"
 #include "velox/exec/Task.h"
+#include <signal.h>
 
 using facebook::velox::common::testutil::TestValue;
 
@@ -368,6 +369,7 @@ void Driver::enqueueInternal() {
   } catch (const VeloxException&) {                                        \
     throw;                                                                 \
   } catch (const std::exception& e) {                                      \
+    raise (SIGABRT);                                                       \
     VELOX_FAIL(                                                            \
         "Operator::{} failed for [operator: {}, plan node ID: {}]: {}",    \
         operatorMethod,                                                    \
