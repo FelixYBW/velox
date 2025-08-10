@@ -24,9 +24,25 @@
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 
+#include <thread>
+
+#include <execinfo.h> /* backtrace, backtrace_symbols_fd */
+#include <unistd.h> /* STDOUT_FILENO */
+
+extern std::thread::id main_thread;
+
 namespace facebook::velox::filesystems {
 
 namespace {
+
+
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+}
 
 // By default, the AWS SDK reads object data into an auto-growing StringStream.
 // To avoid copies, read directly into a pre-allocated buffer instead.
@@ -154,7 +170,29 @@ class S3ReadFile ::Impl {
         AwsWriteableStreamFactory(position, length));
     RECORD_METRIC_VALUE(kMetricS3ActiveConnections);
     RECORD_METRIC_VALUE(kMetricS3GetObjectCalls);
+
+    auto start = std::chrono::system_clock::now();
+    auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        start.time_since_epoch());
+
     auto outcome = client_->GetObject(request);
+
+    auto end = std::chrono::system_clock::now();
+    auto this_thread = std::this_thread::get_id();
+    std::cout << "LATENCY_BREAKDOWN: [S3 Pread]" << this_thread
+              << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - start)
+                     .count()
+              << " " << length
+              << " " << offset
+              << std::endl;
+/*    if (main_thread != this_thread)
+    {
+      printf("=======================");
+      print_stacktrace();
+    }
+*/
     if (!outcome.IsSuccess()) {
       RECORD_METRIC_VALUE(kMetricS3GetObjectErrors);
     }

@@ -23,6 +23,9 @@
 #include "velox/connectors/hive/TableHandle.h"
 #include "velox/connectors/hive/iceberg/IcebergSplitReader.h"
 #include "velox/dwio/common/ReaderFactory.h"
+#include <thread>
+
+std::thread::id main_thread;
 
 namespace facebook::velox::connector::hive {
 namespace {
@@ -212,6 +215,10 @@ void SplitReader::applyBucketConversion(
 
 uint64_t SplitReader::next(uint64_t size, VectorPtr& output) {
   uint64_t numScanned;
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+
   if (!baseReaderOpts_.randomSkip()) {
     numScanned = baseRowReader_->next(size, output);
   } else {
@@ -219,6 +226,18 @@ uint64_t SplitReader::next(uint64_t size, VectorPtr& output) {
     mutation.randomSkip = baseReaderOpts_.randomSkip().get();
     numScanned = baseRowReader_->next(size, output, &mutation);
   }
+  
+  auto end = std::chrono::system_clock::now();
+  main_thread = std::this_thread::get_id();
+  std::cout << "LATENCY_BREAKDOWN: [RowReader Next]"
+            << main_thread << " " << startTime.count() << " "
+            << std::chrono::duration_cast<std::chrono::microseconds>(
+                   end - start)
+                   .count()
+            << " "
+            << size
+            << std::endl;
+
   if (numScanned > 0 && output->size() > 0 && partitionFunction_) {
     applyBucketConversion(
         output, bucketConversionRows(*output->asChecked<RowVector>()));
