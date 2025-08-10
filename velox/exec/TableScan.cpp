@@ -195,6 +195,7 @@ RowVectorPtr TableScan::getOutput() {
           maxReadBatchSize_,
           static_cast<int32_t>(readBatchSize / maxFilteringRatio_));
     }
+    checkPreload();
     uint64_t ioTimeUs{0};
     std::optional<RowVectorPtr> dataOptional;
     {
@@ -203,7 +204,6 @@ RowVectorPtr TableScan::getOutput() {
       dataOptional = dataSource_->next(readBatchSize, blockingFuture_);
     }
 
-    checkPreload();
     {
       auto lockedStats = stats_.wlock();
       lockedStats->addRuntimeStat(
