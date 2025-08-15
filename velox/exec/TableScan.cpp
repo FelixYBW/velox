@@ -17,6 +17,8 @@
 #include "velox/common/testutil/TestValue.h"
 #include "velox/common/time/Timer.h"
 #include "velox/exec/Task.h"
+#include <thread>
+#include <iostream>
 
 using facebook::velox::common::testutil::TestValue;
 
@@ -122,6 +124,10 @@ RowVectorPtr TableScan::getOutput() {
   VELOX_CHECK(!blockingFuture_.valid());
   blockingReason_ = BlockingReason::kNotBlocked;
 
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+        
   if (noMoreSplits_) {
     return nullptr;
   }
@@ -172,7 +178,23 @@ RowVectorPtr TableScan::getOutput() {
          &debugString_});
 
     if (needNewSplit_) {
+
+      auto start_next = std::chrono::system_clock::now();
+      auto startTime_next = std::chrono::duration_cast<std::chrono::microseconds>(
+          start_next.time_since_epoch());    
+      
       const auto hasNewSplit = getSplit();
+
+      auto end_next = std::chrono::system_clock::now();
+      std::cout << "LATENCY_BREAKDOWN: [Get Split]" << std::this_thread::get_id()
+      << " " << startTime_next.count() << " "
+      << std::chrono::duration_cast<std::chrono::microseconds>(
+              end_next - start_next)
+              .count()
+      << " " << 0
+      << " " << 0
+      << std::endl;
+      
       if (!hasNewSplit) {
         VELOX_CHECK(needNewSplit_);
         if (blockingReason_ != BlockingReason::kNotBlocked) {
@@ -197,12 +219,26 @@ RowVectorPtr TableScan::getOutput() {
     }
     checkPreload();
     uint64_t ioTimeUs{0};
+    auto start_next = std::chrono::system_clock::now();
+    auto startTime_next = std::chrono::duration_cast<std::chrono::microseconds>(
+        start_next.time_since_epoch());    
     std::optional<RowVectorPtr> dataOptional;
     {
       MicrosecondTimer timer(&ioTimeUs);
       auto lk = driverCtx_->driver->pushdownFilters()->at(0).rlock();
       dataOptional = dataSource_->next(readBatchSize, blockingFuture_);
     }
+
+    auto end_next = std::chrono::system_clock::now();
+    std::cout << "LATENCY_BREAKDOWN: [DS Next]" << std::this_thread::get_id()
+    << " " << startTime_next.count() << " "
+    << std::chrono::duration_cast<std::chrono::microseconds>(
+            end_next - start_next)
+            .count()
+    << " " << 0
+    << " " << 0
+    << std::endl;
+
 
     {
       auto lockedStats = stats_.wlock();
@@ -236,6 +272,17 @@ RowVectorPtr TableScan::getOutput() {
           }
           RECORD_METRIC_VALUE(
               velox::kMetricTableScanBatchBytes, data->estimateFlatSize());
+
+          auto end = std::chrono::system_clock::now();
+          std::cout << "LATENCY_BREAKDOWN: [Get Output]" << std::this_thread::get_id()
+          << " " << startTime.count() << " "
+          << std::chrono::duration_cast<std::chrono::microseconds>(
+                  end - start)
+                  .count()
+          << " " << data->size()
+          << " " << 0
+          << std::endl;
+
           return data;
         } else {
           maxFilteringRatio_ = std::max(
