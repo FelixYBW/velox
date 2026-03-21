@@ -17,8 +17,11 @@
 #include "velox/dwio/common/compression/PagedInputStream.h"
 
 #include <thread>
+#include <mutex>
 #include <execinfo.h> /* backtrace, backtrace_symbols_fd */
 #include <unistd.h> /* STDOUT_FILENO */
+
+extern std::mutex latency_breakdown_mutex;
 
 #include "velox/dwio/common/Statistics.h"
 
@@ -217,14 +220,17 @@ bool PagedInputStream::readOrSkip(const void** data, int32_t* size) {
       });
           
       auto end = std::chrono::system_clock::now();
-      std::cout << "LATENCY_BREAKDOWN: [Raw Uncompress]"
-                << std::this_thread::get_id() << " " << startTime.count() << " "
-                << std::chrono::duration_cast<std::chrono::microseconds>(
-                       end - start)
-                       .count()
-                << " "
-                << outputBufferLength_
-                << std::endl;
+      {
+        std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+        std::cout << "LATENCY_BREAKDOWN: [Raw Uncompress]"
+                  << std::this_thread::get_id() << " " << startTime.count() << " "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(
+                         end - start)
+                         .count()
+                  << " "
+                  << outputBufferLength_
+                  << std::endl;
+      }
                 
       //print_stacktrace();
 

@@ -16,6 +16,10 @@
 
 #include "velox/dwio/parquet/reader/PageReader.h"
 
+#include <mutex>
+
+extern std::mutex latency_breakdown_mutex;
+
 #include "velox/common/testutil/TestValue.h"
 #include "velox/common/time/Timer.h"
 #include "velox/dwio/common/BufferUtil.h"
@@ -99,14 +103,17 @@ PageHeader PageReader::readPageHeader() {
     }
 
     auto end = std::chrono::system_clock::now();
-    std::cout << "LATENCY_BREAKDOWN: [Read Header]"
-              << std::this_thread::get_id() << " " << startTime.count() << " "
-              << std::chrono::duration_cast<std::chrono::microseconds>(
-                      end - start)
-                      .count()
-              << " "
-              << size
-              << std::endl;
+    {
+      std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+      std::cout << "LATENCY_BREAKDOWN: [Read Header]"
+                << std::this_thread::get_id() << " " << startTime.count() << " "
+                << std::chrono::duration_cast<std::chrono::microseconds>(
+                        end - start)
+                        .count()
+                << " "
+                << size
+                << std::endl;
+    }
 
     stats_.pageLoadTimeNs.increment(readUs * 1'000);
     bufferStart_ = reinterpret_cast<const char*>(buffer);
@@ -160,14 +167,17 @@ const char* PageReader::readBytes(int32_t size, BufferPtr& copy) {
   stats_.pageLoadTimeNs.increment(readUs * 1'000);
 
   auto end = std::chrono::system_clock::now();
-  std::cout << "LATENCY_BREAKDOWN: [ReadBytes]"
-            << std::this_thread::get_id() << " " << startTime.count() << " "
-            << std::chrono::duration_cast<std::chrono::microseconds>(
-                    end - start)
-                    .count()
-            << " "
-            << size
-            << std::endl;
+  {
+    std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+    std::cout << "LATENCY_BREAKDOWN: [ReadBytes]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                      end - start)
+                      .count()
+              << " "
+              << size
+              << std::endl;
+  }
 
   return copy->as<char>();
 }
@@ -427,14 +437,17 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
         }
 
         auto end = std::chrono::system_clock::now();
-        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
-                  << std::this_thread::get_id() << " " << startTime.count() << " "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(
-                          end - start)
-                          .count()
-                  << " "
-                  << numBytes
-                  << std::endl;
+        {
+          std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+          std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                    << std::this_thread::get_id() << " " << startTime.count() << " "
+                    << std::chrono::duration_cast<std::chrono::microseconds>(
+                            end - start)
+                            .count()
+                    << " "
+                    << numBytes
+                    << std::endl;
+        }
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       if (type_->type()->isShortDecimal() &&
@@ -479,14 +492,17 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
               bufferEnd_);
         }
         auto end = std::chrono::system_clock::now();
-        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
-                  << std::this_thread::get_id() << " " << startTime.count() << " "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(
-                          end - start)
-                          .count()
-                  << " "
-                  << numBytes
-                  << std::endl;
+        {
+          std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+          std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                    << std::this_thread::get_id() << " " << startTime.count() << " "
+                    << std::chrono::duration_cast<std::chrono::microseconds>(
+                            end - start)
+                            .count()
+                    << " "
+                    << numBytes
+                    << std::endl;
+        }
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       // Expand the Parquet type length values to Velox type length.
@@ -524,14 +540,17 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
               numBytes, inputStream_.get(), strings, bufferStart_, bufferEnd_);
         }
         auto end = std::chrono::system_clock::now();
-        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
-                  << std::this_thread::get_id() << " " << startTime.count() << " "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(
-                          end - start)
-                          .count()
-                  << " "
-                  << numBytes
-                  << std::endl;
+        {
+          std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+          std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                    << std::this_thread::get_id() << " " << startTime.count() << " "
+                    << std::chrono::duration_cast<std::chrono::microseconds>(
+                            end - start)
+                            .count()
+                    << " "
+                    << numBytes
+                    << std::endl;
+        }
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       auto header = strings;
@@ -568,14 +587,17 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
               bufferEnd_);
         }
         auto end = std::chrono::system_clock::now();
-        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
-                  << std::this_thread::get_id() << " " << startTime.count() << " "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(
-                          end - start)
-                          .count()
-                  << " "
-                  << numParquetBytes
-                  << std::endl;
+        {
+          std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+          std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                    << std::this_thread::get_id() << " " << startTime.count() << " "
+                    << std::chrono::duration_cast<std::chrono::microseconds>(
+                            end - start)
+                            .count()
+                    << " "
+                    << numParquetBytes
+                    << std::endl;
+        }
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       if (type_->type()->isShortDecimal()) {

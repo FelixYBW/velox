@@ -25,8 +25,10 @@
 #include "velox/connectors/hive/iceberg/IcebergSplitReader.h"
 #include "velox/dwio/common/ReaderFactory.h"
 #include <thread>
+#include <mutex>
 
 std::thread::id main_thread;
+std::mutex latency_breakdown_mutex;
 
 namespace facebook::velox::connector::hive {
 namespace {
@@ -302,14 +304,17 @@ uint64_t SplitReader::next(uint64_t size, VectorPtr& output) {
   
   auto end = std::chrono::system_clock::now();
   main_thread = std::this_thread::get_id();
-  std::cout << "LATENCY_BREAKDOWN: [RowReader Next]"
-            << main_thread << " " << startTime.count() << " "
-            << std::chrono::duration_cast<std::chrono::microseconds>(
-                   end - start)
-                   .count()
-            << " "
-            << size
-            << std::endl;
+  {
+    std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+    std::cout << "LATENCY_BREAKDOWN: [RowReader Next]"
+              << main_thread << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - start)
+                     .count()
+              << " "
+              << size
+              << std::endl;
+  }
 
   if (numScanned > 0 && output->size() > 0 && partitionFunction_) {
     applyBucketConversion(

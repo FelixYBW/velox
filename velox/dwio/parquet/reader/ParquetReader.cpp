@@ -26,11 +26,13 @@
 #include "velox/functions/lib/string/StringImpl.h"
 
 #include <thread>
+#include <mutex>
 
 #include <execinfo.h> /* backtrace, backtrace_symbols_fd */
 #include <unistd.h> /* STDOUT_FILENO */
 
 extern std::thread::id main_thread;
+extern std::mutex latency_breakdown_mutex;
 
 namespace facebook::velox::parquet {
 
@@ -1404,12 +1406,15 @@ class ParquetRowReader::Impl {
     
     if (nextRowGroupIdsIdx_ == rowGroupIds_.size()) {
 
-    std::cout << "LATENCY_BREAKDOWN: [Rowgroup Finished]"
-              << std::this_thread::get_id() << " " << startTime.count() << " "
-              << 1
-              << " "
-              << nextRowGroupIdsIdx_ << " " << rowGroupIds_.size()
-              << std::endl;
+    {
+      std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+      std::cout << "LATENCY_BREAKDOWN: [Rowgroup Finished]"
+                << std::this_thread::get_id() << " " << startTime.count() << " "
+                << 1
+                << " "
+                << nextRowGroupIdsIdx_ << " " << rowGroupIds_.size()
+                << std::endl;
+    }
     return false;
     }
 
@@ -1426,14 +1431,17 @@ class ParquetRowReader::Impl {
 
     auto end = std::chrono::system_clock::now();
     auto this_thread_id = std::this_thread::get_id();
-    std::cout << "LATENCY_BREAKDOWN: [advanceToNextRowGroup]"
-              << this_thread_id << " " << startTime.count() << " "
-              << std::chrono::duration_cast<std::chrono::microseconds>(
-                    end - start)
-                    .count()
-              << " "
-              << rowsInCurrentRowGroup_
-              << std::endl;
+    {
+      std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+      std::cout << "LATENCY_BREAKDOWN: [advanceToNextRowGroup]"
+                << this_thread_id << " " << startTime.count() << " "
+                << std::chrono::duration_cast<std::chrono::microseconds>(
+                      end - start)
+                      .count()
+                << " "
+                << rowsInCurrentRowGroup_
+                << std::endl;
+    }
 /*    if (this_thread_id!=main_thread){
       printf("=======================");
       print_stacktrace();

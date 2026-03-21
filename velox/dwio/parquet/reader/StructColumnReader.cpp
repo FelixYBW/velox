@@ -20,6 +20,9 @@
 #include "velox/dwio/parquet/reader/ParquetColumnReader.h"
 #include "velox/dwio/parquet/reader/RepeatedColumnReader.h"
 #include <thread>
+#include <mutex>
+
+extern std::mutex latency_breakdown_mutex;
 
 namespace facebook::velox::common {
 class ScanSpec;
@@ -178,14 +181,17 @@ std::shared_ptr<dwio::common::BufferedInput> StructColumnReader::loadRowGroup(
   newInput->load(dwio::common::LogType::STRIPE);
 
   auto end = std::chrono::system_clock::now();
-  std::cout << "LATENCY_BREAKDOWN: [New Input Load]"
-            << std::this_thread::get_id() << " " << startTime.count() << " "
-            << std::chrono::duration_cast<std::chrono::microseconds>(
-                   end - start)
-                   .count()
-            << " "
-            << index
-            << std::endl;
+  {
+    std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+    std::cout << "LATENCY_BREAKDOWN: [New Input Load]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - start)
+                     .count()
+              << " "
+              << index
+              << std::endl;
+  }
 
   return newInput;
 }

@@ -25,11 +25,13 @@
 #include <aws/s3/model/HeadObjectRequest.h>
 
 #include <thread>
+#include <mutex>
 
 #include <execinfo.h> /* backtrace, backtrace_symbols_fd */
 #include <unistd.h> /* STDOUT_FILENO */
 
 extern std::thread::id main_thread;
+extern std::mutex latency_breakdown_mutex;
 
 namespace facebook::velox::filesystems {
 
@@ -179,14 +181,17 @@ class S3ReadFile ::Impl {
 
     auto end = std::chrono::system_clock::now();
     auto this_thread = std::this_thread::get_id();
-    std::cout << "LATENCY_BREAKDOWN: [S3 Pread]" << this_thread
-              << " " << startTime.count() << " "
-              << std::chrono::duration_cast<std::chrono::microseconds>(
-                     end - start)
-                     .count()
-              << " " << length
-              << " " << offset
-              << std::endl;
+    {
+      std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+      std::cout << "LATENCY_BREAKDOWN: [S3 Pread]" << this_thread
+                << " " << startTime.count() << " "
+                << std::chrono::duration_cast<std::chrono::microseconds>(
+                       end - start)
+                       .count()
+                << " " << length
+                << " " << offset
+                << std::endl;
+    }
 /*    if (main_thread != this_thread)
     {
       printf("=======================");

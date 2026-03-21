@@ -20,6 +20,9 @@
 #include <string>
 #include <unordered_map>
 #include <thread>
+#include <mutex>
+
+extern std::mutex latency_breakdown_mutex;
 
 #include "velox/common/Casts.h"
 #include "velox/common/testutil/TestValue.h"
@@ -334,14 +337,17 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
   readerOutputType_ = splitReader_->readerOutputType();
 
   auto end = std::chrono::system_clock::now();
-  std::cout << "LATENCY_BREAKDOWN: [Add Split]"
-            << std::this_thread::get_id() << " " << startTime.count() << " "
-            << std::chrono::duration_cast<std::chrono::microseconds>(
-                   end - start)
-                   .count()
-            << " "
-            << 0
-            << std::endl;
+  {
+    std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+    std::cout << "LATENCY_BREAKDOWN: [Add Split]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - start)
+                     .count()
+              << " "
+              << 0
+              << std::endl;
+  }
 }
 
 std::optional<RowVectorPtr> HiveDataSource::next(
