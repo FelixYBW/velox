@@ -87,11 +87,27 @@ PageHeader PageReader::readPageHeader() {
   if (bufferEnd_ == bufferStart_) {
     const void* buffer;
     int32_t size;
+
+    auto start = std::chrono::system_clock::now();
+    auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        start.time_since_epoch());
+
     uint64_t readUs{0};
     {
       MicrosecondTimer timer(&readUs);
       inputStream_->Next(&buffer, &size);
     }
+
+    auto end = std::chrono::system_clock::now();
+    std::cout << "LATENCY_BREAKDOWN: [Read Header]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                      end - start)
+                      .count()
+              << " "
+              << size
+              << std::endl;
+
     stats_.pageLoadTimeNs.increment(readUs * 1'000);
     bufferStart_ = reinterpret_cast<const char*>(buffer);
     bufferEnd_ = bufferStart_ + size;
@@ -111,6 +127,12 @@ PageHeader PageReader::readPageHeader() {
 }
 
 const char* PageReader::readBytes(int32_t size, BufferPtr& copy) {
+
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+
+
   uint64_t readUs{0};
   {
     MicrosecondTimer timer(&readUs);
@@ -136,6 +158,17 @@ const char* PageReader::readBytes(int32_t size, BufferPtr& copy) {
         bufferEnd_);
   }
   stats_.pageLoadTimeNs.increment(readUs * 1'000);
+
+  auto end = std::chrono::system_clock::now();
+  std::cout << "LATENCY_BREAKDOWN: [ReadBytes]"
+            << std::this_thread::get_id() << " " << startTime.count() << " "
+            << std::chrono::duration_cast<std::chrono::microseconds>(
+                    end - start)
+                    .count()
+            << " "
+            << size
+            << std::endl;
+
   return copy->as<char>();
 }
 
@@ -378,6 +411,10 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
       if (pageData_) {
         memcpy(dictionary_.values->asMutable<char>(), pageData_, numBytes);
       } else {
+        auto start = std::chrono::system_clock::now();
+        auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+          start.time_since_epoch());
+
         uint64_t readUs{0};
         {
           MicrosecondTimer timer(&readUs);
@@ -388,6 +425,16 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
               bufferStart_,
               bufferEnd_);
         }
+
+        auto end = std::chrono::system_clock::now();
+        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                  << std::this_thread::get_id() << " " << startTime.count() << " "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(
+                          end - start)
+                          .count()
+                  << " "
+                  << numBytes
+                  << std::endl;
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       if (type_->type()->isShortDecimal() &&
@@ -418,6 +465,9 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
       if (pageData_) {
         memcpy(dictionary_.values->asMutable<char>(), pageData_, numBytes);
       } else {
+        auto start = std::chrono::system_clock::now();
+        auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+          start.time_since_epoch());
         uint64_t readUs{0};
         {
           MicrosecondTimer timer(&readUs);
@@ -428,6 +478,15 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
               bufferStart_,
               bufferEnd_);
         }
+        auto end = std::chrono::system_clock::now();
+        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                  << std::this_thread::get_id() << " " << startTime.count() << " "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(
+                          end - start)
+                          .count()
+                  << " "
+                  << numBytes
+                  << std::endl;
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       // Expand the Parquet type length values to Velox type length.
@@ -455,12 +514,24 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
       if (pageData_) {
         memcpy(strings, pageData_, numBytes);
       } else {
+        auto start = std::chrono::system_clock::now();
+        auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+          start.time_since_epoch());
         uint64_t readUs{0};
         {
           MicrosecondTimer timer(&readUs);
           dwio::common::readBytes(
               numBytes, inputStream_.get(), strings, bufferStart_, bufferEnd_);
         }
+        auto end = std::chrono::system_clock::now();
+        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                  << std::this_thread::get_id() << " " << startTime.count() << " "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(
+                          end - start)
+                          .count()
+                  << " "
+                  << numBytes
+                  << std::endl;
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       auto header = strings;
@@ -483,6 +554,9 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
       if (pageData_) {
         memcpy(data, pageData_, numParquetBytes);
       } else {
+        auto start = std::chrono::system_clock::now();
+        auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+          start.time_since_epoch());
         uint64_t readUs{0};
         {
           MicrosecondTimer timer(&readUs);
@@ -493,6 +567,15 @@ void PageReader::prepareDictionary(const PageHeader& pageHeader) {
               bufferStart_,
               bufferEnd_);
         }
+        auto end = std::chrono::system_clock::now();
+        std::cout << "LATENCY_BREAKDOWN: [Read Dictionary]"
+                  << std::this_thread::get_id() << " " << startTime.count() << " "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(
+                          end - start)
+                          .count()
+                  << " "
+                  << numParquetBytes
+                  << std::endl;
         stats_.pageLoadTimeNs.increment(readUs * 1'000);
       }
       if (type_->type()->isShortDecimal()) {

@@ -25,9 +25,24 @@
 #include "velox/dwio/parquet/thrift/ThriftTransport.h"
 #include "velox/functions/lib/string/StringImpl.h"
 
+#include <thread>
+
+#include <execinfo.h> /* backtrace, backtrace_symbols_fd */
+#include <unistd.h> /* STDOUT_FILENO */
+
+extern std::thread::id main_thread;
+
 namespace facebook::velox::parquet {
 
 namespace {
+
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+}
 
 /// Finds the node with the given ID in the TypeWithId tree. Uses a full
 /// traversal because Parquet's TypeWithId nodes all share the same maxId
@@ -1382,8 +1397,20 @@ class ParquetRowReader::Impl {
 
  private:
   bool advanceToNextRowGroup() {
+
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+    
     if (nextRowGroupIdsIdx_ == rowGroupIds_.size()) {
-      return false;
+
+    std::cout << "LATENCY_BREAKDOWN: [Rowgroup Finished]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << 1
+              << " "
+              << nextRowGroupIdsIdx_ << " " << rowGroupIds_.size()
+              << std::endl;
+    return false;
     }
 
     auto nextRowGroupIndex = rowGroupIds_[nextRowGroupIdsIdx_];
@@ -1396,6 +1423,22 @@ class ParquetRowReader::Impl {
     currentRowInGroup_ = 0;
     nextRowGroupIdsIdx_++;
     columnReader_->seekToRowGroup(nextRowGroupIndex);
+
+    auto end = std::chrono::system_clock::now();
+    auto this_thread_id = std::this_thread::get_id();
+    std::cout << "LATENCY_BREAKDOWN: [advanceToNextRowGroup]"
+              << this_thread_id << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                    end - start)
+                    .count()
+              << " "
+              << rowsInCurrentRowGroup_
+              << std::endl;
+/*    if (this_thread_id!=main_thread){
+      printf("=======================");
+      print_stacktrace();
+    }*/
+
     return true;
   }
 

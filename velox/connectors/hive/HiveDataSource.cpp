@@ -19,6 +19,7 @@
 #include <fmt/ranges.h>
 #include <string>
 #include <unordered_map>
+#include <thread>
 
 #include "velox/common/Casts.h"
 #include "velox/common/testutil/TestValue.h"
@@ -297,6 +298,11 @@ void HiveDataSource::setupRowIdColumn() {
 }
 
 void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
+
+  auto start = std::chrono::system_clock::now();
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      start.time_since_epoch());
+
   VELOX_CHECK_NULL(
       split_,
       "Previous split has not been processed yet. Call next to process the split.");
@@ -326,6 +332,16 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
   splitReader_->configureReaderOptions(randomSkip_);
   splitReader_->prepareSplit(metadataFilter_, runtimeStats_);
   readerOutputType_ = splitReader_->readerOutputType();
+
+  auto end = std::chrono::system_clock::now();
+  std::cout << "LATENCY_BREAKDOWN: [Add Split]"
+            << std::this_thread::get_id() << " " << startTime.count() << " "
+            << std::chrono::duration_cast<std::chrono::microseconds>(
+                   end - start)
+                   .count()
+            << " "
+            << 0
+            << std::endl;
 }
 
 std::optional<RowVectorPtr> HiveDataSource::next(
