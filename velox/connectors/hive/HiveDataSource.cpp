@@ -345,7 +345,7 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
                      end - start)
                      .count()
               << " "
-              << 0
+              << filePath
               << std::endl;
   }
 }

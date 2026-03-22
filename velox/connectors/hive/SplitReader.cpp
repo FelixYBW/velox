@@ -312,7 +312,7 @@ uint64_t SplitReader::next(uint64_t size, VectorPtr& output) {
                      end - start)
                      .count()
               << " "
-              << size
+              << hiveSplit_->filePath
               << std::endl;
   }
 
