@@ -143,7 +143,7 @@ class S3ReadFile ::Impl {
 
   uint64_t memoryUsage() const {
     // TODO: Check if any buffers are being used by the S3 library
-    return sizeof(Aws::S3::S3Client) + kS3MaxKeySize + 2 * sizeof(std::string) +
+    return sizeof(Aws::S3Crt::S3CrtClient) + kS3MaxKeySize + 2 * sizeof(std::string) +
         sizeof(int64_t);
   }
 

@@ -37,11 +37,11 @@
 #include <aws/core/utils/threading/PooledThreadExecutor.h>
 #include <aws/identity-management/auth/STSAssumeRoleCredentialsProvider.h>
 #include <aws/s3-crt/S3CrtClient.h>
-#include <aws/s3/model/CopyObjectRequest.h>
-#include <aws/s3/model/DeleteObjectRequest.h>
-#include <aws/s3/model/HeadObjectRequest.h>
-#include <aws/s3/model/ListObjectsRequest.h>
-#include <aws/s3/model/PutObjectRequest.h>
+#include <aws/s3-crt/model/CopyObjectRequest.h>
+#include <aws/s3-crt/model/DeleteObjectRequest.h>
+#include <aws/s3-crt/model/HeadObjectRequest.h>
+#include <aws/s3-crt/model/ListObjectsRequest.h>
+#include <aws/s3-crt/model/PutObjectRequest.h>
 
 namespace facebook::velox::filesystems {
 namespace {
@@ -498,7 +498,7 @@ std::vector<std::string> S3FileSystem::list(std::string_view path) {
   std::string key;
   getBucketAndKeyFromPath(getPath(path), bucket, key);
 
-  Aws::S3::Model::ListObjectsRequest request;
+  Aws::S3Crt::Model::ListObjectsRequest request;
   request.SetBucket(awsString(bucket));
   request.SetPrefix(awsString(key));
 
@@ -520,7 +520,7 @@ bool S3FileSystem::exists(std::string_view path) {
   std::string key;
   getBucketAndKeyFromPath(getPath(path), bucket, key);
 
-  Aws::S3::Model::HeadObjectRequest request;
+  Aws::S3Crt::Model::HeadObjectRequest request;
   request.SetBucket(awsString(bucket));
   request.SetKey(awsString(key));
 
@@ -534,7 +534,7 @@ void S3FileSystem::mkdir(
   std::string key;
   getBucketAndKeyFromPath(getPath(path), bucket, key);
 
-  Aws::S3::Model::PutObjectRequest request;
+  Aws::S3Crt::Model::PutObjectRequest request;
   request.SetBucket(awsString(bucket));
   request.SetKey(awsString(key));
 
@@ -558,7 +558,7 @@ void S3FileSystem::rename(
   getBucketAndKeyFromPath(getPath(newPath), targetBucket, targetKey);
 
   // Copies the object to the new location.
-  Aws::S3::Model::CopyObjectRequest copyRequest;
+  Aws::S3Crt::Model::CopyObjectRequest copyRequest;
   copyRequest.SetCopySource(awsString(sourceBucket + "/" + sourceKey));
   copyRequest.SetBucket(awsString(targetBucket));
   copyRequest.SetKey(awsString(targetKey));
@@ -570,7 +570,7 @@ void S3FileSystem::rename(
       sourceKey);
 
   // Deletes the original object.
-  Aws::S3::Model::DeleteObjectRequest deleteRequest;
+  Aws::S3Crt::Model::DeleteObjectRequest deleteRequest;
   deleteRequest.SetBucket(awsString(sourceBucket));
   deleteRequest.SetKey(awsString(sourceKey));
 
