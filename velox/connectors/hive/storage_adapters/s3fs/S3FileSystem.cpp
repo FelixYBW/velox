@@ -286,10 +286,6 @@ class S3FileSystem::Impl {
               .count();
     }
 
-    if (s3Config.maxConnections().has_value()) {
-      clientConfig.maxConnections = s3Config.maxConnections().value();
-    }
-
     auto retryStrategy = getRetryStrategy(s3Config);
     if (retryStrategy.has_value()) {
       clientConfig.retryStrategy = retryStrategy.value();
@@ -304,10 +300,30 @@ class S3FileSystem::Impl {
       clientConfig.executor = Aws::MakeShared<Aws::Utils::Threading::PooledThreadExecutor>(nullptr, s3Config.executorPoolSize().value());
     }
 
-    clientConfig.partSize = 8*1024*1024;
-    clientConfig.throughputTargetGbps = 0;
-    clientConfig.maxConnections = 256;
-    clientConfig.enableTcpKeepAlive = true;
+    // Configure S3 CRT client settings with values from config or defaults
+    if (s3Config.partSize().has_value()) {
+      clientConfig.partSize = s3Config.partSize().value();
+    } else {
+      clientConfig.partSize = 8*1024*1024;  // Default: 8MB
+    }
+
+    if (s3Config.throughputTargetGbps().has_value()) {
+      clientConfig.throughputTargetGbps = s3Config.throughputTargetGbps().value();
+    } else {
+      clientConfig.throughputTargetGbps = 0;  // Default: 0 (auto)
+    }
+
+    // Note: maxConnections is already set above if configured
+    // Set default if not already configured
+    if (!s3Config.maxConnections().has_value()) {
+      clientConfig.maxConnections = 256;  // Default: 256
+    }
+
+    if (s3Config.enableTcpKeepAlive().has_value()) {
+      clientConfig.enableTcpKeepAlive = s3Config.enableTcpKeepAlive().value();
+    } else {
+      clientConfig.enableTcpKeepAlive = true;  // Default: true
+    }
 
     client_ = std::make_shared<Aws::S3Crt::S3CrtClient>(
         credentialsProvider, clientConfig);

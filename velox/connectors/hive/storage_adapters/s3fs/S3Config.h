@@ -78,6 +78,9 @@ class S3Config {
     kCredentialsProvider,
     kIMDSEnabled,
     kExecutorPoolSize,
+    kPartSize,
+    kThroughputTargetGbps,
+    kEnableTcpKeepAlive,
     kEnd
   };
 
@@ -119,6 +122,11 @@ class S3Config {
             {Keys::kIMDSEnabled, std::make_pair("aws-imds-enabled", "true")},
             {Keys::kExecutorPoolSize,
              std::make_pair("executor-pool-size", std::nullopt)},
+            {Keys::kPartSize, std::make_pair("part-size", std::nullopt)},
+            {Keys::kThroughputTargetGbps,
+             std::make_pair("throughput-target-gbps", std::nullopt)},
+            {Keys::kEnableTcpKeepAlive,
+             std::make_pair("enable-tcp-keep-alive", std::nullopt)},
         };
     return config;
   }
@@ -261,6 +269,33 @@ class S3Config {
       return folly::to<uint32_t>(val.value());
     }
     return std::optional<uint32_t>();
+  }
+
+  /// Part size for multipart uploads in bytes.
+  std::optional<uint64_t> partSize() const {
+    auto val = config_.find(Keys::kPartSize)->second;
+    if (val.has_value()) {
+      return folly::to<uint64_t>(val.value());
+    }
+    return std::optional<uint64_t>();
+  }
+
+  /// Target throughput in Gbps for S3 CRT client.
+  std::optional<double> throughputTargetGbps() const {
+    auto val = config_.find(Keys::kThroughputTargetGbps)->second;
+    if (val.has_value()) {
+      return folly::to<double>(val.value());
+    }
+    return std::optional<double>();
+  }
+
+  /// Enable TCP keep-alive for S3 connections.
+  std::optional<bool> enableTcpKeepAlive() const {
+    auto val = config_.find(Keys::kEnableTcpKeepAlive)->second;
+    if (val.has_value()) {
+      return folly::to<bool>(val.value());
+    }
+    return std::optional<bool>();
   }
 
  private:
