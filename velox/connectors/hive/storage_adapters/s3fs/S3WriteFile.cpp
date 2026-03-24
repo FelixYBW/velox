@@ -21,15 +21,15 @@
 #include "velox/dwio/common/DataBuffer.h"
 
 #include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/CompleteMultipartUploadRequest.h>
-#include <aws/s3/model/CompletedMultipartUpload.h>
-#include <aws/s3/model/CompletedPart.h>
-#include <aws/s3/model/CreateBucketRequest.h>
-#include <aws/s3/model/CreateMultipartUploadRequest.h>
-#include <aws/s3/model/HeadBucketRequest.h>
-#include <aws/s3/model/HeadObjectRequest.h>
-#include <aws/s3/model/UploadPartRequest.h>
+#include <aws/s3-crt/S3CrtClient.h>
+#include <aws/s3-crt/model/CompleteMultipartUploadRequest.h>
+#include <aws/s3-crt/model/CompletedMultipartUpload.h>
+#include <aws/s3-crt/model/CompletedPart.h>
+#include <aws/s3-crt/model/CreateBucketRequest.h>
+#include <aws/s3-crt/model/CreateMultipartUploadRequest.h>
+#include <aws/s3-crt/model/HeadBucketRequest.h>
+#include <aws/s3-crt/model/HeadObjectRequest.h>
+#include <aws/s3-crt/model/UploadPartRequest.h>
 
 namespace facebook::velox::filesystems {
 
@@ -37,7 +37,7 @@ class S3WriteFile::Impl {
  public:
   explicit Impl(
       std::string_view path,
-      Aws::S3::S3Client* client,
+      Aws::S3Crt::S3CrtClient* client,
       memory::MemoryPool* pool)
       : client_(client), pool_(pool) {
     VELOX_CHECK_NOT_NULL(client);
@@ -47,7 +47,7 @@ class S3WriteFile::Impl {
     currentPart_->reserve(kPartUploadSize);
     // Check that the object doesn't exist, if it does throw an error.
     {
-      Aws::S3::Model::HeadObjectRequest request;
+      Aws::S3Crt::Model::HeadObjectRequest request;
       request.SetBucket(awsString(bucket_));
       request.SetKey(awsString(key_));
       RECORD_METRIC_VALUE(kMetricS3MetadataCalls);
@@ -66,11 +66,11 @@ class S3WriteFile::Impl {
 
     // Create bucket if not present.
     {
-      Aws::S3::Model::HeadBucketRequest request;
+      Aws::S3Crt::Model::HeadBucketRequest request;
       request.SetBucket(awsString(bucket_));
       auto bucketMetadata = client_->HeadBucket(request);
       if (!bucketMetadata.IsSuccess()) {
-        Aws::S3::Model::CreateBucketRequest request;
+        Aws::S3Crt::Model::CreateBucketRequest request;
         request.SetBucket(bucket_);
         auto outcome = client_->CreateBucket(request);
         VELOX_CHECK_AWS_OUTCOME(
@@ -80,7 +80,7 @@ class S3WriteFile::Impl {
 
     // Initiate the multi-part upload.
     {
-      Aws::S3::Model::CreateMultipartUploadRequest request;
+      Aws::S3Crt::Model::CreateMultipartUploadRequest request;
       request.SetBucket(awsString(bucket_));
       request.SetKey(awsString(key_));
 
@@ -128,9 +128,9 @@ class S3WriteFile::Impl {
     VELOX_CHECK_EQ(uploadState_.partNumber, uploadState_.completedParts.size());
     // Complete the multipart upload.
     {
-      Aws::S3::Model::CompletedMultipartUpload completedUpload;
+      Aws::S3Crt::Model::CompletedMultipartUpload completedUpload;
       completedUpload.SetParts(uploadState_.completedParts);
-      Aws::S3::Model::CompleteMultipartUploadRequest request;
+      Aws::S3Crt::Model::CompleteMultipartUploadRequest request;
       request.SetBucket(awsString(bucket_));
       request.SetKey(awsString(key_));
       request.SetUploadId(uploadState_.id);
@@ -168,7 +168,7 @@ class S3WriteFile::Impl {
 
   // Holds state for the multipart upload.
   struct UploadState {
-    Aws::Vector<Aws::S3::Model::CompletedPart> completedParts;
+    Aws::Vector<Aws::S3Crt::Model::CompletedPart> completedParts;
     int64_t partNumber = 0;
     Aws::String id;
   };
@@ -200,7 +200,7 @@ class S3WriteFile::Impl {
     VELOX_CHECK(isLast || (!isLast && (part.size() == kPartUploadSize)));
     // Upload the part.
     {
-      Aws::S3::Model::UploadPartRequest request;
+      Aws::S3Crt::Model::UploadPartRequest request;
       request.SetBucket(bucket_);
       request.SetKey(key_);
       request.SetUploadId(uploadState_.id);
@@ -213,7 +213,7 @@ class S3WriteFile::Impl {
       // Append ETag and part number for this uploaded part.
       // This will be needed for upload completion in Close().
       auto result = outcome.GetResult();
-      Aws::S3::Model::CompletedPart part;
+      Aws::S3Crt::Model::CompletedPart part;
 
       part.SetPartNumber(uploadState_.partNumber);
       part.SetETag(result.GetETag());
@@ -226,7 +226,7 @@ class S3WriteFile::Impl {
     }
   }
 
-  Aws::S3::S3Client* client_;
+  Aws::S3Crt::S3CrtClient* client_;
   memory::MemoryPool* pool_;
   std::unique_ptr<dwio::common::DataBuffer<char>> currentPart_;
   std::string bucket_;
@@ -236,7 +236,7 @@ class S3WriteFile::Impl {
 
 S3WriteFile::S3WriteFile(
     std::string_view path,
-    Aws::S3::S3Client* client,
+    Aws::S3Crt::S3CrtClient* client,
     memory::MemoryPool* pool) {
   impl_ = std::make_shared<Impl>(path, client, pool);
 }

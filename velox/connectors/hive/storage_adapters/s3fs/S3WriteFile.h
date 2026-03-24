@@ -19,8 +19,8 @@
 #include "velox/common/file/File.h"
 #include "velox/common/memory/MemoryPool.h"
 
-namespace Aws::S3 {
-class S3Client;
+namespace Aws::S3Crt {
+class S3CrtClient;
 }
 
 namespace facebook::velox::filesystems {
@@ -49,7 +49,7 @@ class S3WriteFile : public WriteFile {
  public:
   S3WriteFile(
       std::string_view path,
-      Aws::S3::S3Client* client,
+      Aws::S3Crt::S3CrtClient* client,
       memory::MemoryPool* pool);
 
   /// Appends data to the end of the file.
