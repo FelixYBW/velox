@@ -304,6 +304,11 @@ class S3FileSystem::Impl {
       clientConfig.executor = Aws::MakeShared<Aws::Utils::Threading::PooledThreadExecutor>(nullptr, s3Config.executorPoolSize().value());
     }
 
+    clientConfig.partSize = 8*1024*1024;
+    clientConfig.throughputTargetGbps = 0;
+    clientConfig.maxConnections = 256;
+    clientConfig.enableTcpKeepAlive = true;
+
     client_ = std::make_shared<Aws::S3Crt::S3CrtClient>(
         credentialsProvider, clientConfig);
     ++fileSystemCount;
