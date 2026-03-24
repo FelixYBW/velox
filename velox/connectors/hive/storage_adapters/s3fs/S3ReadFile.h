@@ -18,8 +18,8 @@
 
 #include "velox/common/file/File.h"
 
-namespace Aws::S3 {
-class S3Client;
+namespace Aws::S3Crt {
+class S3CrtClient;
 }
 
 namespace facebook::velox::filesystems {
@@ -27,7 +27,7 @@ namespace facebook::velox::filesystems {
 /// Implementation of s3 read file.
 class S3ReadFile : public ReadFile {
  public:
-  S3ReadFile(std::string_view path, Aws::S3::S3Client* client);
+  S3ReadFile(std::string_view path, Aws::S3Crt::S3CrtClient* client);
 
   ~S3ReadFile() override;
 

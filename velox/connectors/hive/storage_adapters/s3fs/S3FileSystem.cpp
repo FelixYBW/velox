@@ -36,7 +36,7 @@
 #include <aws/core/client/DefaultRetryStrategy.h>
 #include <aws/core/utils/threading/PooledThreadExecutor.h>
 #include <aws/identity-management/auth/STSAssumeRoleCredentialsProvider.h>
-#include <aws/s3/S3Client.h>
+#include <aws/s3-crt/S3CrtClient.h>
 #include <aws/s3/model/CopyObjectRequest.h>
 #include <aws/s3/model/DeleteObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
@@ -234,7 +234,7 @@ class S3FileSystem::Impl {
     VELOX_CHECK(getAwsInstance()->isInitialized(), "S3 is not initialized");
     Aws::Client::ClientConfigurationInitValues initValues;
     initValues.shouldDisableIMDS = !s3Config.useIMDS();
-    Aws::S3::S3ClientConfiguration clientConfig(initValues);
+    Aws::S3Crt::ClientConfiguration clientConfig(initValues);
     clientConfig.checksumConfig.requestChecksumCalculation =
         Aws::Client::RequestChecksumCalculation::WHEN_REQUIRED;
     clientConfig.checksumConfig.responseChecksumValidation =
@@ -304,8 +304,8 @@ class S3FileSystem::Impl {
       clientConfig.executor = Aws::MakeShared<Aws::Utils::Threading::PooledThreadExecutor>(nullptr, s3Config.executorPoolSize().value());
     }
 
-    client_ = std::make_shared<Aws::S3::S3Client>(
-        credentialsProvider, nullptr /* endpointProvider */, clientConfig);
+    client_ = std::make_shared<Aws::S3Crt::S3CrtClient>(
+        credentialsProvider, clientConfig);
     ++fileSystemCount;
   }
 
@@ -436,10 +436,10 @@ class S3FileSystem::Impl {
     return std::nullopt;
   }
 
-  // Make it clear that the S3FileSystem instance owns the S3Client.
-  // Once the S3FileSystem is destroyed, the S3Client fails to work
+  // Make it clear that the S3FileSystem instance owns the S3CrtClient.
+  // Once the S3FileSystem is destroyed, the S3CrtClient fails to work
   // due to the Aws::ShutdownAPI invocation in the destructor.
-  Aws::S3::S3Client* s3Client() const {
+  Aws::S3Crt::S3CrtClient* s3Client() const {
     return client_.get();
   }
 
@@ -452,7 +452,7 @@ class S3FileSystem::Impl {
   }
 
  private:
-  std::shared_ptr<Aws::S3::S3Client> client_;
+  std::shared_ptr<Aws::S3Crt::S3CrtClient> client_;
 };
 
 S3FileSystem::S3FileSystem(

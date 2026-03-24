@@ -20,9 +20,9 @@
 #include "velox/connectors/hive/storage_adapters/s3fs/S3Util.h"
 
 #include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/GetObjectRequest.h>
-#include <aws/s3/model/HeadObjectRequest.h>
+#include <aws/s3-crt/S3CrtClient.h>
+#include <aws/s3-crt/model/GetObjectRequest.h>
+#include <aws/s3-crt/model/HeadObjectRequest.h>
 
 #include <thread>
 #include <mutex>
@@ -58,7 +58,7 @@ Aws::IOStreamFactory AwsWriteableStreamFactory(void* data, int64_t nbytes) {
 
 class S3ReadFile ::Impl {
  public:
-  explicit Impl(std::string_view path, Aws::S3::S3Client* client)
+  explicit Impl(std::string_view path, Aws::S3Crt::S3CrtClient* client)
       : client_(client) {
     getBucketAndKeyFromPath(path, bucket_, key_);
   }
@@ -77,7 +77,7 @@ class S3ReadFile ::Impl {
       return;
     }
 
-    Aws::S3::Model::HeadObjectRequest request;
+    Aws::S3Crt::Model::HeadObjectRequest request;
     request.SetBucket(awsString(bucket_));
     request.SetKey(awsString(key_));
 
@@ -160,8 +160,8 @@ class S3ReadFile ::Impl {
   // bytes.
   void preadInternal(uint64_t offset, uint64_t length, char* position) const {
     // Read the desired range of bytes.
-    Aws::S3::Model::GetObjectRequest request;
-    Aws::S3::Model::GetObjectResult result;
+    Aws::S3Crt::Model::GetObjectRequest request;
+    Aws::S3Crt::Model::GetObjectResult result;
 
     request.SetBucket(awsString(bucket_));
     request.SetKey(awsString(key_));
@@ -206,13 +206,13 @@ class S3ReadFile ::Impl {
     VELOX_CHECK_AWS_OUTCOME(outcome, "Failed to get S3 object", bucket_, key_);
   }
 
-  Aws::S3::S3Client* client_;
+  Aws::S3Crt::S3CrtClient* client_;
   std::string bucket_;
   std::string key_;
   int64_t length_ = -1;
 };
 
-S3ReadFile::S3ReadFile(std::string_view path, Aws::S3::S3Client* client) {
+S3ReadFile::S3ReadFile(std::string_view path, Aws::S3Crt::S3CrtClient* client) {
   impl_ = std::make_shared<Impl>(path, client);
 }
 
