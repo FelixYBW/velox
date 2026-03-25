@@ -1588,7 +1588,9 @@ FileMetaDataPtr ParquetReader::fileMetaData() const {
 
 void ParquetReader::setFirstRowGroupLoadedCallback(
     std::function<void()> callback) {
-  readerBase_->setFirstRowGroupLoadedCallback(std::move(callback));
+  if (readerBase_) {
+    readerBase_->setFirstRowGroupLoadedCallback(std::move(callback));
+  }
 }
 
 } // namespace facebook::velox::parquet

@@ -330,7 +330,9 @@ std::unique_ptr<ColumnStatistics> ReaderBase::columnStatistics(
 
 void ReaderBase::setFirstRowGroupLoadedCallback(
     std::function<void()> callback) {
-  input_->setOnFirstRowGroupLoaded(std::move(callback));
+  if (input_) {
+    input_->setOnFirstRowGroupLoaded(std::move(callback));
+  }
 }
 
 std::shared_ptr<const Type> ReaderBase::convertType(
