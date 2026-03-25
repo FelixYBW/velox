@@ -147,6 +147,10 @@ class SplitReader {
   const RowTypePtr& readerOutputType() const {
     return readerOutputType_;
   }
+  
+  /// Sets a callback to be invoked when the first row group data is loaded.
+  /// Must be called after prepareSplit() which creates the BufferedInput.
+  void setFirstRowGroupLoadedCallback(std::function<void()> callback);
 
   std::string toString() const;
 
