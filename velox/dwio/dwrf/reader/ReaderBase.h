@@ -255,6 +255,9 @@ class ReaderBase {
     return footerBufferOverread_;
   }
 
+  /// Sets a callback to be invoked when the first row group data is loaded.
+  void setFirstRowGroupLoadedCallback(std::function<void()> callback);
+
  private:
   static std::shared_ptr<const Type> convertType(
       const FooterWrapper& footer,

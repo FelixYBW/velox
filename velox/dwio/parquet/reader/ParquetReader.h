@@ -102,6 +102,14 @@ class ParquetReader : public dwio::common::Reader {
       const dwio::common::RowReaderOptions& options = {}) const override;
 
   FileMetaDataPtr fileMetaData() const;
+  
+  /// Returns the BufferedInput for accessing the underlying input stream.
+  dwio::common::BufferedInput& bufferedInput() const {
+    return readerBase_->bufferedInput();
+  }
+
+  void setFirstRowGroupLoadedCallback(
+      std::function<void()> callback) override;
 
  private:
   std::shared_ptr<ReaderBase> readerBase_;

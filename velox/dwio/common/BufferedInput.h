@@ -230,6 +230,11 @@ class BufferedInput {
   /// needs to reset the buffered input state between lookups.
   virtual void reset();
 
+  /// Sets a callback to be invoked when the first row group data is loaded.
+  /// Default implementation does nothing. Override in subclasses that support
+  /// this functionality (e.g., DirectBufferedInput).
+  virtual void setOnFirstRowGroupLoaded(std::function<void()> callback) {}
+
  protected:
   static int adjustedReadPct(const cache::TrackingData& trackingData) {
     // When this method is called, there is one more reference that is already

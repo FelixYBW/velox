@@ -208,12 +208,14 @@ void SplitReader::prepareSplit(
 }
 
 void SplitReader::setFirstRowGroupLoadedCallback(std::function<void()> callback) {
-  // Get the BufferedInput from the base reader and set the callback
+  // Cast to ParquetReader to access bufferedInput
   if (baseReader_) {
-    auto* bufferedInput = dynamic_cast<dwio::common::DirectBufferedInput*>(
-        &baseReader_->bufferedInput());
-    if (bufferedInput) {
-      bufferedInput->setOnFirstRowGroupLoaded(std::move(callback));
+    auto* parquetReader = dynamic_cast<parquet::ParquetReader*>(baseReader_.get());
+    if (parquetReader) {
+      auto* directInput = parquetReader->bufferedInput();
+      if (directInput) {
+        directInput->setOnFirstRowGroupLoaded(std::move(callback));
+      }
     }
   }
 }
@@ -597,5 +599,12 @@ void SplitReader::setPartitionValue(
       it->second->isPartitionDateValueDaysSinceEpoch());
   spec->setConstantValue(constant);
 }
+void SplitReader::setFirstRowGroupLoadedCallback(
+    std::function<void()> callback) {
+  if (baseReader_) {
+    baseReader_->setFirstRowGroupLoadedCallback(std::move(callback));
+  }
+}
+
 
 } // namespace facebook::velox::connector::hive
