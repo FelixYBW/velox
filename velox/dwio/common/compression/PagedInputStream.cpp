@@ -218,7 +218,7 @@ bool PagedInputStream::readOrSkip(const void** data, int32_t* size) {
             outputBuffer_->data(),
             outputBuffer_->capacity());
       });
-          
+     /*     
       auto end = std::chrono::system_clock::now();
       {
         std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
@@ -231,7 +231,7 @@ bool PagedInputStream::readOrSkip(const void** data, int32_t* size) {
                   << outputBufferLength_
                   << std::endl;
       }
-                
+       */         
       //print_stacktrace();
 
       if (data) {
