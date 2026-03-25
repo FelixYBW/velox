@@ -63,6 +63,11 @@ struct ConnectorSplit : public ISerializable {
   const bool cacheable{true};
 
   std::unique_ptr<AsyncSource<DataSource>> dataSource;
+  
+  // Flag to indicate if the first row group data has been loaded into memory.
+  // This is set asynchronously after the actual I/O completes during preloading.
+  // Used to prioritize splits with data already in memory.
+  std::atomic<bool> firstRowGroupBuffered{false};
 
   explicit ConnectorSplit(
       const std::string& _connectorId,

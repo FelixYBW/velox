@@ -18,6 +18,23 @@
 
 namespace facebook::velox::exec {
 
+namespace {
+
+// Helper function to check if the first row group data is actually loaded
+// in memory for a preloaded split.
+bool isFirstRowGroupBuffered(
+    const std::shared_ptr<connector::ConnectorSplit>& connectorSplit) {
+  if (!connectorSplit->dataSource || !connectorSplit->dataSource->hasValue()) {
+    return false;
+  }
+
+  // Check the atomic flag that gets set when I/O completes.
+  // If not set yet, the data may still be loading asynchronously.
+  return connectorSplit->firstRowGroupBuffered.load(std::memory_order_acquire);
+}
+
+} // namespace
+
 void SplitsStore::addSplit(
     Split split,
     std::vector<ContinuePromise>& promises) {
@@ -66,8 +83,9 @@ Split SplitsStore::getSplit(
         // Initializes split->dataSource.
         preload(connectorSplit);
         preloadingSplits_->insert(connectorSplit);
-      } else if (
-          readySplitIndex == -1 && connectorSplit->dataSource->hasValue()) {
+      } else if (readySplitIndex == -1 && isFirstRowGroupBuffered(connectorSplit)) {
+        // Prioritize splits where the first row group data is actually loaded
+        // in memory, not just where the AsyncSource is ready.
         readySplitIndex = i;
         preloadingSplits_->erase(connectorSplit);
       }

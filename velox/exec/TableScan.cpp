@@ -460,6 +460,19 @@ void TableScan::preload(
           auto lk = pushdownFilters->at(0).rlock();
           dataSource->addSplit(split);
         }
+        
+        // Set up callback to mark when first row group data is loaded.
+        // This happens after prepareSplit() schedules async I/O.
+        // The callback will be invoked when DirectCoalescedLoad::loadData()
+        // completes the actual data loading.
+        auto* hiveDataSource = dynamic_cast<connector::hive::HiveDataSource*>(dataSource.get());
+        if (hiveDataSource && hiveDataSource->splitReader_) {
+          // Set a callback that will be invoked when row group data is loaded
+          hiveDataSource->setFirstRowGroupLoadedCallback([splitPtr = split]() {
+            splitPtr->firstRowGroupBuffered.store(true, std::memory_order_release);
+          });
+        }
+        
         return dataSource;
       });
 }

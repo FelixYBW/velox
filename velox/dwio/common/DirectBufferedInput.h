@@ -84,6 +84,12 @@ class DirectCoalescedLoad : public cache::CoalescedLoad {
   /// Loads the regions. Returns {} since no cache entries are made. The loaded
   /// data is retrieved with getData().
   std::vector<cache::CachePin> loadData(bool prefetch) override;
+  
+  /// Sets a callback to be invoked after data loading completes.
+  /// Used to notify when the first row group data is ready.
+  void setOnLoadComplete(std::function<void()> callback) {
+    onLoadComplete_ = std::move(callback);
+  }
 
   /// Returns false since DirectCoalescedLoad reads from remote storage, not
   /// SSD.
@@ -115,6 +121,7 @@ class DirectCoalescedLoad : public cache::CoalescedLoad {
   const int32_t loadQuantum_;
   memory::MemoryPool* const pool_;
   std::vector<LoadRequest> requests_;
+  std::function<void()> onLoadComplete_;
 };
 
 class DirectBufferedInput : public BufferedInput {
@@ -226,6 +233,12 @@ class DirectBufferedInput : public BufferedInput {
 
   /// Resets the buffered input for reuse across different operations.
   void reset() override;
+  
+  /// Sets a callback to be invoked when the first row group data is loaded.
+  /// Used during split preloading to mark when data is actually in memory.
+  void setOnFirstRowGroupLoaded(std::function<void()> callback) {
+    onFirstRowGroupLoaded_ = std::move(callback);
+  }
 
  protected:
   // Some members are protected to allow custom extended buffered inputs.
@@ -300,6 +313,9 @@ class DirectBufferedInput : public BufferedInput {
   folly::Executor* const executor_;
   const uint64_t fileSize_;
   const io::ReaderOptions options_;
+  
+  // Callback to invoke when first row group data is loaded.
+  std::function<void()> onFirstRowGroupLoaded_;
 
   // Coalesced loads spanning multiple streams in one IO.
   folly::Synchronized<folly::F14FastMap<

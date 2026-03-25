@@ -109,6 +109,12 @@ class HiveDataSource : public DataSource {
   const ConnectorQueryCtx* testingConnectorQueryCtx() const {
     return connectorQueryCtx_;
   }
+  
+  /// Sets a callback to be invoked when the first row group data is loaded.
+  /// This is used during split preloading to mark when data is actually in memory.
+  void setFirstRowGroupLoadedCallback(std::function<void()> callback) {
+    firstRowGroupLoadedCallback_ = std::move(callback);
+  }
 
  protected:
   virtual std::unique_ptr<SplitReader> createSplitReader();
@@ -193,6 +199,9 @@ class HiveDataSource : public DataSource {
   std::shared_ptr<random::RandomSkipTracker> randomSkip_;
 
   int64_t numBucketConversion_ = 0;
+  
+  // Callback to invoke when first row group data is loaded during preloading.
+  std::function<void()> firstRowGroupLoadedCallback_;
 
   // Reusable memory for remaining filter evaluation.
   VectorPtr filterResult_;
