@@ -207,6 +207,17 @@ void SplitReader::prepareSplit(
   createRowReader(std::move(metadataFilter), std::move(rowType), std::nullopt);
 }
 
+void SplitReader::setFirstRowGroupLoadedCallback(std::function<void()> callback) {
+  // Get the BufferedInput from the base reader and set the callback
+  if (baseReader_) {
+    auto* bufferedInput = dynamic_cast<dwio::common::DirectBufferedInput*>(
+        &baseReader_->bufferedInput());
+    if (bufferedInput) {
+      bufferedInput->setOnFirstRowGroupLoaded(std::move(callback));
+    }
+  }
+}
+
 void SplitReader::validateSynthesizedColumnFilters() const {
   if (!subfieldFiltersForValidation_ || !infoColumns_) {
     return;

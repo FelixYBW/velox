@@ -335,6 +335,12 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
   splitReader_->configureReaderOptions(randomSkip_);
   splitReader_->prepareSplit(metadataFilter_, runtimeStats_);
   readerOutputType_ = splitReader_->readerOutputType();
+  
+  // Set up callback to mark when first row group data is loaded.
+  // This is called after prepareSplit() which creates the BufferedInput.
+  if (firstRowGroupLoadedCallback_) {
+    splitReader_->setFirstRowGroupLoadedCallback(firstRowGroupLoadedCallback_);
+  }
 
   auto end = std::chrono::system_clock::now();
   {
