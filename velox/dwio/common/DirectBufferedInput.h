@@ -236,7 +236,7 @@ class DirectBufferedInput : public BufferedInput {
   
   /// Sets a callback to be invoked when the first row group data is loaded.
   /// Used during split preloading to mark when data is actually in memory.
-  void setOnFirstRowGroupLoaded(std::function<void()> callback) {
+  void setOnFirstRowGroupLoaded(std::function<void()> callback) override {
     onFirstRowGroupLoaded_ = std::move(callback);
   }
 
