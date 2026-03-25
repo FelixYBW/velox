@@ -338,9 +338,9 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
   
   // Set up callback to mark when first row group data is loaded.
   // This is called after prepareSplit() which creates the BufferedInput.
-  if (firstRowGroupLoadedCallback_) {
-    splitReader_->setFirstRowGroupLoadedCallback(firstRowGroupLoadedCallback_);
-  }
+  splitReader_->setFirstRowGroupLoadedCallback([splitPtr = split]() {
+    splitPtr->firstRowGroupBuffered.store(true, std::memory_order_release);
+  });
 
   auto end = std::chrono::system_clock::now();
   {

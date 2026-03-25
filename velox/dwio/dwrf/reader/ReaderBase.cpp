@@ -326,15 +326,11 @@ std::unique_ptr<ColumnStatistics> ReaderBase::columnStatistics(
       group.statistics(nodeIndex), &decrypter);
   return buildColumnStatisticsFromProto(
       ColumnStatisticsWrapper(&stats->statistics(index - root)), statsContext);
+}
 
 void ReaderBase::setFirstRowGroupLoadedCallback(
     std::function<void()> callback) {
-  auto* directInput =
-      static_cast<dwio::common::DirectBufferedInput*>(input_.get());
-  if (directInput) {
-    directInput->setOnFirstRowGroupLoaded(std::move(callback));
-  }
-}
+  input_->setOnFirstRowGroupLoaded(std::move(callback));
 }
 
 std::shared_ptr<const Type> ReaderBase::convertType(

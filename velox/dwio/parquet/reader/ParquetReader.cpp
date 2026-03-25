@@ -1223,15 +1223,6 @@ int64_t ReaderBase::rowGroupUncompressedSize(
 
 bool ReaderBase::isRowGroupBuffered(int32_t rowGroupIndex) const {
   return inputs_.count(rowGroupIndex) != 0;
-
-void ReaderBase::setFirstRowGroupLoadedCallback(
-    std::function<void()> callback) {
-  auto* directInput =
-      static_cast<dwio::common::DirectBufferedInput*>(input_.get());
-  if (directInput) {
-    directInput->setOnFirstRowGroupLoaded(std::move(callback));
-  }
-}
 }
 
 class ParquetRowReader::Impl {
@@ -1593,11 +1584,11 @@ std::unique_ptr<dwio::common::RowReader> ParquetReader::createRowReader(
 
 FileMetaDataPtr ParquetReader::fileMetaData() const {
   return readerBase_->fileMetaData();
+}
+
 void ParquetReader::setFirstRowGroupLoadedCallback(
     std::function<void()> callback) {
   readerBase_->setFirstRowGroupLoadedCallback(std::move(callback));
-}
-
 }
 
 } // namespace facebook::velox::parquet

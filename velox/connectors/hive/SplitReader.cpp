@@ -207,19 +207,6 @@ void SplitReader::prepareSplit(
   createRowReader(std::move(metadataFilter), std::move(rowType), std::nullopt);
 }
 
-void SplitReader::setFirstRowGroupLoadedCallback(std::function<void()> callback) {
-  // Cast to ParquetReader to access bufferedInput
-  if (baseReader_) {
-    auto* parquetReader = dynamic_cast<parquet::ParquetReader*>(baseReader_.get());
-    if (parquetReader) {
-      auto* directInput = parquetReader->bufferedInput();
-      if (directInput) {
-        directInput->setOnFirstRowGroupLoaded(std::move(callback));
-      }
-    }
-  }
-}
-
 void SplitReader::validateSynthesizedColumnFilters() const {
   if (!subfieldFiltersForValidation_ || !infoColumns_) {
     return;

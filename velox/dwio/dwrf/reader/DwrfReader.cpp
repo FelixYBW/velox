@@ -1108,11 +1108,6 @@ std::unique_ptr<DwrfRowReader> DwrfReader::createDwrfRowReader(
     rowReader->nextRowNumber();
   }
   return rowReader;
-
-void DwrfReader::setFirstRowGroupLoadedCallback(
-    std::function<void()> callback) {
-  readerBase_->setFirstRowGroupLoadedCallback(std::move(callback));
-}
 }
 
 std::unique_ptr<DwrfReader> DwrfReader::create(

@@ -353,9 +353,6 @@ class DwrfReader : public dwio::common::Reader {
     return readerBase_.get();
   }
 
-  void setFirstRowGroupLoadedCallback(
-      std::function<void()> callback) override;
-
  private:
   // Ensures that files column names match the ones from the table schema using
   // column indices.
