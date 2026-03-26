@@ -588,9 +588,11 @@ void SplitReader::setPartitionValue(
 }
 void SplitReader::setFirstRowGroupLoadedCallback(
     std::function<void()> callback) {
+  std::cerr << "added callback to baseReader_ " << baseReader_.get() << " in split reader " << this << std::endl;
   if (baseReader_) {
     baseReader_->setFirstRowGroupLoadedCallback(std::move(callback));
   }
+
 }
 
 

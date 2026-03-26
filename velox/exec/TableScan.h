@@ -190,5 +190,8 @@ class TableScan : public SourceOperator {
   // The total number of raw input rows read up till the last finished split.
   // This is used to detect if a finished split is empty or not.
   uint64_t rawInputRowsSinceLastSplit_{0};
+
+  std::chrono::time_point<std::chrono::system_clock> start_;
+  std::chrono::time_point<std::chrono::system_clock> split_start_;
 };
 } // namespace facebook::velox::exec

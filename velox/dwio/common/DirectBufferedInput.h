@@ -89,6 +89,7 @@ class DirectCoalescedLoad : public cache::CoalescedLoad {
   /// Used to notify when the first row group data is ready.
   void setOnLoadComplete(std::function<void()> callback) {
     onLoadComplete_ = std::move(callback);
+    std::cerr << "added callback to DirectCoalescedLoad " <<  this << std::endl;
   }
 
   /// Returns false since DirectCoalescedLoad reads from remote storage, not
@@ -238,6 +239,7 @@ class DirectBufferedInput : public BufferedInput {
   /// Used during split preloading to mark when data is actually in memory.
   void setOnFirstRowGroupLoaded(std::function<void()> callback) override {
     onFirstRowGroupLoaded_ = std::move(callback);
+    std::cerr << "added callback to directbufferedinput " << this << std::endl;
   }
 
  protected:

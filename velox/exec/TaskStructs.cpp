@@ -16,6 +16,7 @@
 
 #include "velox/exec/TaskStructs.h"
 #include <glog/logging.h>
+#include <iostream>
 
 namespace facebook::velox::exec {
 
@@ -28,10 +29,12 @@ int getColumnChunksLoaded(
   if (!connectorSplit->dataSource || !connectorSplit->dataSource->hasValue()) {
     return 0;
   }
+  int ret=connectorSplit->firstRowGroupBuffered.load(std::memory_order_acquire);
 
+  std::cerr << "split check " << ret << std::endl;
   // Check the atomic counter that gets incremented when each column chunk I/O completes.
   // Returns 0 if no data has been loaded yet.
-  return connectorSplit->firstRowGroupBuffered.load(std::memory_order_acquire);
+  return ret;
 }
 
 } // namespace
@@ -73,6 +76,7 @@ Split SplitsStore::getSplit(
   int readySplitIndex = -1;
   int maxColumnChunksLoaded = 0;
   int firstDataSourceReadyIndex = -1;
+  int chunksLoaded;
   if (maxPreloadSplits > 0) {
     for (int i = 0, end = std::min<size_t>(maxPreloadSplits, splits_.size());
          i < end;
@@ -92,7 +96,7 @@ Split SplitsStore::getSplit(
           firstDataSourceReadyIndex = i;
         }
         // Check how many column chunks have been loaded for this split
-        int chunksLoaded = getColumnChunksLoaded(connectorSplit);
+        chunksLoaded = getColumnChunksLoaded(connectorSplit);
         if (chunksLoaded > maxColumnChunksLoaded) {
           // Prioritize splits with the most column chunks already loaded in memory
           maxColumnChunksLoaded = chunksLoaded;
@@ -113,8 +117,8 @@ Split SplitsStore::getSplit(
       readySplitIndex = 0;
     }
   } else {
-      LOG(INFO) << "Selected split index: " << readySplitIndex
-            << ", column chunks loaded: " << chunksLoaded;
+      std::cerr << "Selected split index: " << readySplitIndex
+            << ", column chunks loaded: " << chunksLoaded << std::endl;
   }
 
   VELOX_CHECK(!splits_.empty());

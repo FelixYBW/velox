@@ -196,9 +196,11 @@ void DirectBufferedInput::readRegion(
   
   // Set the callback if one was provided
   // The callback will be invoked for each column chunk loaded
+  std::cerr << "added callback to  DirectCoalescedLoad " << load.get() << " in ReaderBase " << this << std::endl;
   if (onFirstRowGroupLoaded_) {
     load->setOnLoadComplete(onFirstRowGroupLoaded_);
   }
+
   
   coalescedLoads_.push_back(load);
   streamToCoalescedLoad_.withWLock([&](auto& loads) {
@@ -352,8 +354,10 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool prefetch) {
       "facebook::velox::cache::DirectCoalescedLoad::loadData", this);
   
   // Notify that data loading is complete
+  std::cerr << "load returned" << std::endl;
   if (onLoadComplete_) {
     onLoadComplete_();
+    std::cerr << "onLoadComplete_ called" << std::endl;
   }
   
   return {};

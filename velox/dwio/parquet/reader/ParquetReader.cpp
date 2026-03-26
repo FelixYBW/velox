@@ -166,6 +166,7 @@ class ReaderBase {
 
   /// Sets a callback to be invoked when the first row group data is loaded.
   void setFirstRowGroupLoadedCallback(std::function<void()> callback) {
+    std::cerr << "added callback to input_ " << input_.get() << " in parquet ReaderBase " << this << std::endl;
     if (input_) {
       input_->setOnFirstRowGroupLoaded(std::move(callback));
     }
@@ -1593,6 +1594,7 @@ FileMetaDataPtr ParquetReader::fileMetaData() const {
 
 void ParquetReader::setFirstRowGroupLoadedCallback(
     std::function<void()> callback) {
+  std::cerr << "added callback to readerBase_ " << readerBase_.get() << " in ParquetReader " << this << std::endl;
   if (readerBase_) {
     readerBase_->setFirstRowGroupLoadedCallback(std::move(callback));
   }

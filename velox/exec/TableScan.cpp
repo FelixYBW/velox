@@ -18,8 +18,10 @@
 #include "velox/common/time/Timer.h"
 #include "velox/exec/OperatorType.h"
 #include "velox/exec/Task.h"
+#include <iostream>
 
 using facebook::velox::common::testutil::TestValue;
+extern std::mutex latency_breakdown_mutex;
 
 namespace facebook::velox::exec {
 
@@ -99,6 +101,9 @@ TableScan::TableScan(
           driverCtx_->splitGroupId,
           planNodeId())) {
   readBatchSize_ = driverCtx_->queryConfig().preferredOutputBatchRows();
+
+  start_ = std::chrono::system_clock::now();
+  split_start_ = start_;
 }
 
 void TableScan::initialize() {
@@ -280,6 +285,23 @@ bool TableScan::getSplit() {
   // A point for test code injection.
   TestValue::adjust("facebook::velox::exec::TableScan::getSplit", this);
 
+  auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      split_start_.time_since_epoch());
+
+  auto end = std::chrono::system_clock::now();
+  {
+    std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+    std::cout << "LATENCY_BREAKDOWN: [Split Process]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << (std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - split_start_)
+                     .count() - 10)
+              << " "
+              << 0
+              << std::endl;
+  }
+  split_start_=end;
+
   exec::Split split;
   blockingReason_ = driverCtx_->task->getSplitOrFuture(
       driverCtx_->driverId,
@@ -300,6 +322,22 @@ bool TableScan::getSplit() {
 
   if (!split.hasConnectorSplit()) {
     noMoreSplits_ = true;
+
+    auto startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+    start_.time_since_epoch());
+
+    auto end = std::chrono::system_clock::now();
+    {
+      std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+      std::cout << "LATENCY_BREAKDOWN: [process table scan]"
+                << std::this_thread::get_id() << " " << startTime.count() << " "
+                << (std::chrono::duration_cast<std::chrono::microseconds>(
+                      end - start_)
+                      .count() - 10)
+                << " "
+                << 0
+                << std::endl;
+    }
     if (dataSource_) {
       const auto connectorStats = dataSource_->getRuntimeStats();
       auto lockedStats = stats_.wlock();
@@ -392,6 +430,23 @@ bool TableScan::getSplit() {
         RuntimeCounter(addSplitTimeUs * 1'000, RuntimeCounter::Unit::kNanos));
   }
   ++stats_.wlock()->numSplits;
+
+  startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+      split_start_.time_since_epoch());
+  end = std::chrono::system_clock::now();
+  {
+    std::lock_guard<std::mutex> lock(latency_breakdown_mutex);
+    std::cout << "LATENCY_BREAKDOWN: [prepare split]"
+              << std::this_thread::get_id() << " " << startTime.count() << " "
+              << std::chrono::duration_cast<std::chrono::microseconds>(
+                     end - split_start_)
+                     .count()
+              << " "
+              << stats_.wlock()->numSplits
+              << std::endl;
+  }
+
+
   return true;
 }
 

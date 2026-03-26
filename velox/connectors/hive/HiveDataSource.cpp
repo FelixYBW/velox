@@ -30,6 +30,7 @@ extern std::mutex latency_breakdown_mutex;
 #include "velox/connectors/hive/HiveConfig.h"
 
 #include "velox/expression/FieldReference.h"
+#include <iostream>
 
 using facebook::velox::common::testutil::TestValue;
 
@@ -339,10 +340,13 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
   // Set up callback to increment counter when each column chunk is loaded.
   // This is called after prepareSplit() which creates the BufferedInput.
   // The callback is invoked for each column chunk that completes loading.
+  std::cerr << "added callback to split " << split.get() << " by split reader " <<  splitReader_.get << std::endl;
   splitReader_->setFirstRowGroupLoadedCallback([splitPtr = split]() {
     if (splitPtr) {
       splitPtr->firstRowGroupBuffered.fetch_add(1, std::memory_order_release);
     }
+    std::cerr << "counter increased for split " << splitPtr.get() << std::endl;
+    
   });
 
   auto end = std::chrono::system_clock::now();
