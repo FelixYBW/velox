@@ -15,21 +15,22 @@
  */
 
 #include "velox/exec/TaskStructs.h"
+#include <glog/logging.h>
 
 namespace facebook::velox::exec {
 
 namespace {
 
-// Helper function to check if the first row group data is actually loaded
-// in memory for a preloaded split.
-bool isFirstRowGroupBuffered(
+// Helper function to get the number of column chunks loaded in memory
+// for a preloaded split.
+int getColumnChunksLoaded(
     const std::shared_ptr<connector::ConnectorSplit>& connectorSplit) {
   if (!connectorSplit->dataSource || !connectorSplit->dataSource->hasValue()) {
-    return false;
+    return 0;
   }
 
-  // Check the atomic flag that gets set when I/O completes.
-  // If not set yet, the data may still be loading asynchronously.
+  // Check the atomic counter that gets incremented when each column chunk I/O completes.
+  // Returns 0 if no data has been loaded yet.
   return connectorSplit->firstRowGroupBuffered.load(std::memory_order_acquire);
 }
 
@@ -70,6 +71,8 @@ Split SplitsStore::getSplit(
     int maxPreloadSplits,
     const ConnectorSplitPreloadFunc& preload) {
   int readySplitIndex = -1;
+  int maxColumnChunksLoaded = 0;
+  int firstDataSourceReadyIndex = -1;
   if (maxPreloadSplits > 0) {
     for (int i = 0, end = std::min<size_t>(maxPreloadSplits, splits_.size());
          i < end;
@@ -83,17 +86,37 @@ Split SplitsStore::getSplit(
         // Initializes split->dataSource.
         preload(connectorSplit);
         preloadingSplits_->insert(connectorSplit);
-      } else if (readySplitIndex == -1 && isFirstRowGroupBuffered(connectorSplit)) {
-        // Prioritize splits where the first row group data is actually loaded
-        // in memory, not just where the AsyncSource is ready.
-        readySplitIndex = i;
-        preloadingSplits_->erase(connectorSplit);
+      } else {
+        // Track the first split with dataSource ready
+        if (firstDataSourceReadyIndex == -1 && connectorSplit->dataSource->hasValue()) {
+          firstDataSourceReadyIndex = i;
+        }
+        // Check how many column chunks have been loaded for this split
+        int chunksLoaded = getColumnChunksLoaded(connectorSplit);
+        if (chunksLoaded > maxColumnChunksLoaded) {
+          // Prioritize splits with the most column chunks already loaded in memory
+          maxColumnChunksLoaded = chunksLoaded;
+          readySplitIndex = i;
+          preloadingSplits_->erase(connectorSplit);
+        }
       }
     }
   }
+  // Selection priority:
+  // 1. Split with maximum column chunks loaded (if any have chunks loaded)
+  // 2. First split with dataSource ready (if no chunks loaded yet)
+  // 3. First split (splits[0])
   if (readySplitIndex == -1) {
-    readySplitIndex = 0;
+    if (firstDataSourceReadyIndex != -1) {
+      readySplitIndex = firstDataSourceReadyIndex;
+    } else {
+      readySplitIndex = 0;
+    }
+  } else {
+      LOG(INFO) << "Selected split index: " << readySplitIndex
+            << ", column chunks loaded: " << chunksLoaded;
   }
+
   VELOX_CHECK(!splits_.empty());
   auto split = std::move(splits_[readySplitIndex]);
   splits_.erase(splits_.begin() + readySplitIndex);

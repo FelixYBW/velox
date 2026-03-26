@@ -165,7 +165,11 @@ class ReaderBase {
   bool isRowGroupBuffered(int32_t rowGroupIndex) const;
 
   /// Sets a callback to be invoked when the first row group data is loaded.
-  void setFirstRowGroupLoadedCallback(std::function<void()> callback);
+  void setFirstRowGroupLoadedCallback(std::function<void()> callback) {
+    if (input_) {
+      input_->setOnFirstRowGroupLoaded(std::move(callback));
+    }
+  }
 
  private:
   // Reads and parses file footer.
@@ -1224,6 +1228,7 @@ int64_t ReaderBase::rowGroupUncompressedSize(
 bool ReaderBase::isRowGroupBuffered(int32_t rowGroupIndex) const {
   return inputs_.count(rowGroupIndex) != 0;
 }
+
 
 class ParquetRowReader::Impl {
  public:

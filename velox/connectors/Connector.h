@@ -64,10 +64,10 @@ struct ConnectorSplit : public ISerializable {
 
   std::unique_ptr<AsyncSource<DataSource>> dataSource;
   
-  // Flag to indicate if the first row group data has been loaded into memory.
-  // This is set asynchronously after the actual I/O completes during preloading.
-  // Used to prioritize splits with data already in memory.
-  std::atomic<bool> firstRowGroupBuffered{false};
+  // Counter to track the number of column chunks loaded into memory.
+  // This is incremented asynchronously each time a column chunk I/O completes
+  // during preloading. Used to prioritize splits with more data already in memory.
+  std::atomic<int> firstRowGroupBuffered{0};
 
   explicit ConnectorSplit(
       const std::string& _connectorId,

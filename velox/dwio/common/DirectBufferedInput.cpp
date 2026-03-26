@@ -195,10 +195,9 @@ void DirectBufferedInput::readRegion(
       options_.loadQuantum());
   
   // Set the callback if one was provided
+  // The callback will be invoked for each column chunk loaded
   if (onFirstRowGroupLoaded_) {
     load->setOnLoadComplete(onFirstRowGroupLoaded_);
-    // Only call it once for the first row group
-    onFirstRowGroupLoaded_ = nullptr;
   }
   
   coalescedLoads_.push_back(load);
