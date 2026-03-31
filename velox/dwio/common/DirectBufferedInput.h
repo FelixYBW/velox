@@ -199,7 +199,7 @@ class DirectBufferedInput : public BufferedInput {
         ioStats_,
         executor_,
         options_,
-        onFirstRowGroupLoaded_));
+        std::function<void()>(onFirstRowGroupLoaded_)));
   }
 
   memory::MemoryPool* pool() const {
