@@ -198,7 +198,8 @@ class DirectBufferedInput : public BufferedInput {
         ioStatistics_,
         ioStats_,
         executor_,
-        options_));
+        options_,
+        onFirstRowGroupLoaded_));
   }
 
   memory::MemoryPool* pool() const {
@@ -260,7 +261,8 @@ class DirectBufferedInput : public BufferedInput {
       std::shared_ptr<IoStatistics> ioStatistics,
       std::shared_ptr<velox::IoStats> ioStats,
       folly::Executor* executor,
-      const io::ReaderOptions& readerOptions)
+      const io::ReaderOptions& readerOptions,
+      std::function<void()> onFirstRowGroupLoaded)
       : BufferedInput(std::move(input), readerOptions.memoryPool()),
         fileNum_(std::move(fileNum)),
         tracker_(std::move(tracker)),
@@ -269,7 +271,8 @@ class DirectBufferedInput : public BufferedInput {
         ioStats_(std::move(ioStats)),
         executor_(executor),
         fileSize_(input_->getLength()),
-        options_(readerOptions) {}
+        options_(readerOptions),
+        onFirstRowGroupLoaded_(onFirstRowGroupLoaded) {}
 
   std::vector<int32_t> groupRequests(
       const std::vector<LoadRequest*>& requests,

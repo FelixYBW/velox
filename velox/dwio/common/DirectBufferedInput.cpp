@@ -196,7 +196,7 @@ void DirectBufferedInput::readRegion(
   
   // Set the callback if one was provided
   // The callback will be invoked for each column chunk loaded
-  std::cerr << "added callback to  DirectCoalescedLoad " << load.get() << " in DirectBufferedInput " << this << std::endl;
+  std::cerr << "added callback to  DirectCoalescedLoad " << load.get() << " in DirectBufferedInput " << this << " callback func " << onFirstRowGroupLoaded_.target<void()>() << std::endl;
   if (onFirstRowGroupLoaded_) {
     load->setOnLoadComplete(onFirstRowGroupLoaded_);
   }
