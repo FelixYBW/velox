@@ -190,6 +190,8 @@ class DirectBufferedInput : public BufferedInput {
   }
 
   virtual std::unique_ptr<BufferedInput> clone() const override {
+    std::cerr << "Cloning DirectBufferedInput from " << this << " callback is " << (onFirstRowGroupLoaded_ ? "valid" : "null") << std::endl;
+
     return std::unique_ptr<DirectBufferedInput>(new DirectBufferedInput(
         input_,
         fileNum_,
@@ -272,7 +274,9 @@ class DirectBufferedInput : public BufferedInput {
         executor_(executor),
         fileSize_(input_->getLength()),
         options_(readerOptions),
-        onFirstRowGroupLoaded_(std::move(onFirstRowGroupLoaded)) {}
+        onFirstRowGroupLoaded_(std::move(onFirstRowGroupLoaded)) {
+    std::cerr << "Created DirectBufferedInput " << this << " with callback " << (onFirstRowGroupLoaded_ ? "valid" : "null") << std::endl;
+        }
 
   std::vector<int32_t> groupRequests(
       const std::vector<LoadRequest*>& requests,
