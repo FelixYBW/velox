@@ -431,7 +431,7 @@ void SplitReader::createReader(
     if (splitPtr) {
       splitPtr->firstRowGroupBuffered.fetch_add(1, std::memory_order_release);
     }
-s  });
+  });
 
   baseReader_ = dwio::common::getReaderFactory(baseReaderOpts_.fileFormat())
                     ->createReader(std::move(baseFileInput), baseReaderOpts_);
