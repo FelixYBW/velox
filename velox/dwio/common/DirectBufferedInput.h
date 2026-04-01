@@ -182,8 +182,6 @@ class DirectBufferedInput : public BufferedInput {
   }
 
   virtual std::unique_ptr<BufferedInput> clone() const override {
-    std::cerr << "Cloning DirectBufferedInput from " << this << " callback is " << (onFirstRowGroupLoaded_ ? "valid" : "null") << std::endl;
-
     return std::unique_ptr<DirectBufferedInput>(new DirectBufferedInput(
         input_,
         fileNum_,
@@ -234,7 +232,6 @@ class DirectBufferedInput : public BufferedInput {
   /// Used during split preloading to mark when data is actually in memory.
   void setOnFirstRowGroupLoaded(std::function<void()> callback) override {
     onFirstRowGroupLoaded_ = std::move(callback);
-    std::cerr << "added callback to directbufferedinput " << this << " callback is " << (onFirstRowGroupLoaded_ ? "valid" : "null") << std::endl;
   }
 
  protected:
@@ -267,7 +264,6 @@ class DirectBufferedInput : public BufferedInput {
         fileSize_(input_->getLength()),
         options_(readerOptions),
         onFirstRowGroupLoaded_(std::move(onFirstRowGroupLoaded)) {
-    std::cerr << "Created DirectBufferedInput " << this << " with callback " << (onFirstRowGroupLoaded_ ? "valid" : "null") << std::endl;
         }
 
   std::vector<int32_t> groupRequests(

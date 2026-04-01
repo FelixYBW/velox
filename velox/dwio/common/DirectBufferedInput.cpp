@@ -222,13 +222,12 @@ void DirectBufferedInput::readRegions(
         AsyncLoadHolder loadHolder{
             .load = load, .pool = pool_->shared_from_this()};
         auto callback = onFirstRowGroupLoaded_;
-        executor_->add([this, asyncLoad = std::move(loadHolder), callback = std::move(callback)]() {
+        executor_->add([asyncLoad = std::move(loadHolder), callback = std::move(callback)]() {
           process::TraceContext trace("Read Ahead");
           VELOX_CHECK_NOT_NULL(asyncLoad.load);
           asyncLoad.load->loadOrFuture(nullptr);
           if (callback) {
             callback();
-            std::cerr << "Invoked callback from DBI " << this << std::endl;
           }
         });
       }

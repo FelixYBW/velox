@@ -30,8 +30,6 @@ int getColumnChunksLoaded(
     return 0;
   }
   int ret=connectorSplit->firstRowGroupBuffered.load(std::memory_order_acquire);
-
-  std::cerr << "split check " << ret << " on split " << connectorSplit.get() << std::endl;
   
   // Check the atomic counter that gets incremented when each column chunk I/O completes.
   // Returns 0 if no data has been loaded yet.
@@ -117,9 +115,6 @@ Split SplitsStore::getSplit(
     } else {
       readySplitIndex = 0;
     }
-  } else {
-      std::cerr << "Selected split index: " << readySplitIndex
-            << ", column chunks loaded: " << chunksLoaded << std::endl;
   }
 
   VELOX_CHECK(!splits_.empty());

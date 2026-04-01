@@ -427,13 +427,11 @@ void SplitReader::createReader(
       ioExecutor_,
       fileReadOps);
 
-  std::cerr << "added callback to split " << hiveSplit_.get() << " by split reader " <<  baseFileInput.get() << std::endl;
   baseFileInput->setOnFirstRowGroupLoaded([splitPtr = hiveSplit_]() {
     if (splitPtr) {
       splitPtr->firstRowGroupBuffered.fetch_add(1, std::memory_order_release);
     }
-    std::cerr << "counter increased for split " << splitPtr.get() << std::endl;
-  });
+s  });
 
   baseReader_ = dwio::common::getReaderFactory(baseReaderOpts_.fileFormat())
                     ->createReader(std::move(baseFileInput), baseReaderOpts_);
