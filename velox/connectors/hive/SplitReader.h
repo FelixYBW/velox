@@ -152,7 +152,7 @@ class SplitReader {
 
  protected:
   SplitReader(
-      const std::shared_ptr<const hive::HiveConnectorSplit>& hiveSplit,
+      const std::shared_ptr<hive::HiveConnectorSplit>& hiveSplit,
       const std::shared_ptr<const HiveTableHandle>& hiveTableHandle,
       const std::unordered_map<
           std::string,
@@ -233,7 +233,7 @@ class SplitReader {
       const RowTypePtr& tableSchema) const;
 
  protected:
-  std::shared_ptr<const HiveConnectorSplit> hiveSplit_;
+  std::shared_ptr<HiveConnectorSplit> hiveSplit_;
   const std::shared_ptr<const HiveTableHandle> hiveTableHandle_;
   const std::unordered_map<
       std::string,

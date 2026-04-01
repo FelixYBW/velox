@@ -30,7 +30,7 @@ using namespace facebook::velox::dwio::common;
 namespace facebook::velox::connector::hive::iceberg {
 
 IcebergSplitReader::IcebergSplitReader(
-    const std::shared_ptr<const hive::HiveConnectorSplit>& hiveSplit,
+    const std::shared_ptr<hive::HiveConnectorSplit>& hiveSplit,
     const HiveTableHandlePtr& hiveTableHandle,
     const std::unordered_map<std::string, HiveColumnHandlePtr>* partitionKeys,
     const ConnectorQueryCtx* connectorQueryCtx,

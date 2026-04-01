@@ -28,7 +28,7 @@ struct IcebergDeleteFile;
 class IcebergSplitReader : public SplitReader {
  public:
   IcebergSplitReader(
-      const std::shared_ptr<const hive::HiveConnectorSplit>& hiveSplit,
+      const std::shared_ptr<hive::HiveConnectorSplit>& hiveSplit,
       const HiveTableHandlePtr& hiveTableHandle,
       const std::unordered_map<std::string, HiveColumnHandlePtr>* partitionKeys,
       const ConnectorQueryCtx* connectorQueryCtx,
