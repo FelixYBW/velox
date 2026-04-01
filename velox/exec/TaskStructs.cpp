@@ -31,7 +31,8 @@ int getColumnChunksLoaded(
   }
   int ret=connectorSplit->firstRowGroupBuffered.load(std::memory_order_acquire);
 
-  std::cerr << "split check " << ret << std::endl;
+  std::cerr << "split check " << ret << " on split " << connectorSplit.get() << std::endl;
+  
   // Check the atomic counter that gets incremented when each column chunk I/O completes.
   // Returns 0 if no data has been loaded yet.
   return ret;
