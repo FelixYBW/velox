@@ -103,9 +103,6 @@ class ParquetReader : public dwio::common::Reader {
 
   FileMetaDataPtr fileMetaData() const;
 
-  void setFirstRowGroupLoadedCallback(
-      std::function<void()> callback) override;
-
  private:
   std::shared_ptr<ReaderBase> readerBase_;
 };

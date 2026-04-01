@@ -84,13 +84,6 @@ class DirectCoalescedLoad : public cache::CoalescedLoad {
   /// Loads the regions. Returns {} since no cache entries are made. The loaded
   /// data is retrieved with getData().
   std::vector<cache::CachePin> loadData(bool prefetch) override;
-  
-  /// Sets a callback to be invoked after data loading completes.
-  /// Used to notify when the first row group data is ready.
-  void setOnLoadComplete(std::function<void()> callback) {
-    onLoadComplete_ = std::move(callback);
-    std::cerr << "added callback to DirectCoalescedLoad " <<  this << " callback is " << (onLoadComplete_ ? "valid" : "null") << std::endl;
-  }
 
   /// Returns false since DirectCoalescedLoad reads from remote storage, not
   /// SSD.
@@ -122,7 +115,6 @@ class DirectCoalescedLoad : public cache::CoalescedLoad {
   const int32_t loadQuantum_;
   memory::MemoryPool* const pool_;
   std::vector<LoadRequest> requests_;
-  std::function<void()> onLoadComplete_;
 };
 
 class DirectBufferedInput : public BufferedInput {

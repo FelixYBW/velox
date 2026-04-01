@@ -352,10 +352,6 @@ class Reader {
     requiredExtraFieldIds_ = requiredExtraFieldIds;
   }
 
-  /// Sets a callback to be invoked when the first row group data is loaded.
-  /// This allows tracking when data becomes available during split preloading.
-  virtual void setFirstRowGroupLoadedCallback(std::function<void()> callback) {}
-
  private:
   std::unordered_set<int32_t> requiredExtraFieldIds_;
 };

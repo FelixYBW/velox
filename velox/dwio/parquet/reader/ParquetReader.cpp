@@ -164,14 +164,6 @@ class ReaderBase {
   /// the data still exists in the buffered inputs.
   bool isRowGroupBuffered(int32_t rowGroupIndex) const;
 
-  /// Sets a callback to be invoked when the first row group data is loaded.
-  void setFirstRowGroupLoadedCallback(std::function<void()> callback) {
-    std::cerr << "added callback to input_ " << input_.get() << " in parquet ReaderBase " << this << std::endl;
-    if (input_) {
-      input_->setOnFirstRowGroupLoaded(std::move(callback));
-    }
-  }
-
  private:
   // Reads and parses file footer.
   void loadFileMetaData();
@@ -1590,14 +1582,6 @@ std::unique_ptr<dwio::common::RowReader> ParquetReader::createRowReader(
 
 FileMetaDataPtr ParquetReader::fileMetaData() const {
   return readerBase_->fileMetaData();
-}
-
-void ParquetReader::setFirstRowGroupLoadedCallback(
-    std::function<void()> callback) {
-  std::cerr << "added callback to readerBase_ " << readerBase_.get() << " in ParquetReader " << this << std::endl;
-  if (readerBase_) {
-    readerBase_->setFirstRowGroupLoadedCallback(std::move(callback));
-  }
 }
 
 } // namespace facebook::velox::parquet

@@ -328,15 +328,6 @@ std::unique_ptr<ColumnStatistics> ReaderBase::columnStatistics(
       ColumnStatisticsWrapper(&stats->statistics(index - root)), statsContext);
 }
 
-void ReaderBase::setFirstRowGroupLoadedCallback(
-    std::function<void()> callback) {
-  std::cerr << "added callback to input_ " << input_.get() << " in ReaderBase " << this << std::endl;
-  if (input_) {
-    input_->setOnFirstRowGroupLoaded(std::move(callback));
-  }
-  
-}
-
 std::shared_ptr<const Type> ReaderBase::convertType(
     const FooterWrapper& footer,
     uint32_t index,

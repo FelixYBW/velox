@@ -427,6 +427,14 @@ void SplitReader::createReader(
       ioExecutor_,
       fileReadOps);
 
+  std::cerr << "added callback to split " << hiveSplit_.get() << " by split reader " <<  baseFileInput.get() << std::endl;
+  baseFileInput->setOnFirstRowGroupLoaded([splitPtr = hiveSplit_]() {
+    if (splitPtr) {
+      splitPtr->firstRowGroupBuffered.fetch_add(1, std::memory_order_release);
+    }
+    std::cerr << "counter increased for split " << splitPtr.get() << std::endl;
+  });
+
   baseReader_ = dwio::common::getReaderFactory(baseReaderOpts_.fileFormat())
                     ->createReader(std::move(baseFileInput), baseReaderOpts_);
   if (!baseReader_) {
@@ -586,14 +594,5 @@ void SplitReader::setPartitionValue(
       it->second->isPartitionDateValueDaysSinceEpoch());
   spec->setConstantValue(constant);
 }
-void SplitReader::setFirstRowGroupLoadedCallback(
-    std::function<void()> callback) {
-  std::cerr << "added callback to baseReader_ " << baseReader_.get() << " in split reader " << this << std::endl;
-  if (baseReader_) {
-    baseReader_->setFirstRowGroupLoadedCallback(std::move(callback));
-  }
-
-}
-
 
 } // namespace facebook::velox::connector::hive

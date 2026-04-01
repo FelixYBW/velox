@@ -337,18 +337,6 @@ void HiveDataSource::addSplit(std::shared_ptr<ConnectorSplit> split) {
   splitReader_->prepareSplit(metadataFilter_, runtimeStats_);
   readerOutputType_ = splitReader_->readerOutputType();
   
-  // Set up callback to increment counter when each column chunk is loaded.
-  // This is called after prepareSplit() which creates the BufferedInput.
-  // The callback is invoked for each column chunk that completes loading.
-  std::cerr << "added callback to split " << split.get() << " by split reader " <<  splitReader_.get() << std::endl;
-  splitReader_->setFirstRowGroupLoadedCallback([splitPtr = split]() {
-    if (splitPtr) {
-      splitPtr->firstRowGroupBuffered.fetch_add(1, std::memory_order_release);
-    }
-    std::cerr << "counter increased for split " << splitPtr.get() << std::endl;
-    
-  });
-
   auto end = std::chrono::system_clock::now();
   {
     std::lock_guard<std::mutex> lock(latency_breakdown_mutex);

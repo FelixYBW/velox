@@ -194,14 +194,6 @@ void DirectBufferedInput::readRegion(
       pool_,
       options_.loadQuantum());
   
-  // Set the callback if one was provided
-  // The callback will be invoked for each column chunk loaded
-  std::cerr << "added callback to  DirectCoalescedLoad " << load.get() << " in DirectBufferedInput " << this << " callback func " << (onFirstRowGroupLoaded_ ? "valid" : "null") << std::endl;
-  if (onFirstRowGroupLoaded_) {
-    load->setOnLoadComplete(onFirstRowGroupLoaded_);
-  }
-
-  
   coalescedLoads_.push_back(load);
   streamToCoalescedLoad_.withWLock([&](auto& loads) {
     for (auto& request : requests) {
@@ -229,10 +221,14 @@ void DirectBufferedInput::readRegions(
       if (load->state() == CoalescedLoad::State::kPlanned) {
         AsyncLoadHolder loadHolder{
             .load = load, .pool = pool_->shared_from_this()};
-        executor_->add([asyncLoad = std::move(loadHolder)]() {
+        auto callback = onFirstRowGroupLoaded_;
+        executor_->add([asyncLoad = std::move(loadHolder), callback = std::move(callback)]() {
           process::TraceContext trace("Read Ahead");
           VELOX_CHECK_NOT_NULL(asyncLoad.load);
           asyncLoad.load->loadOrFuture(nullptr);
+          if (callback) {
+            callback();
+          }
         });
       }
     }
@@ -352,13 +348,6 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool prefetch) {
   }
   TestValue::adjust(
       "facebook::velox::cache::DirectCoalescedLoad::loadData", this);
-  
-  // Notify that data loading is complete
-  std::cerr << "load returned" << std::endl;
-  if (onLoadComplete_) {
-    onLoadComplete_();
-    std::cerr << "onLoadComplete_ called" << std::endl;
-  }
   
   return {};
 }
