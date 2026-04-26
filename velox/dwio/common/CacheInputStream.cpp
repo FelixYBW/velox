@@ -240,6 +240,16 @@ void CacheInputStream::loadSync(const Region& region) {
       input_->read(ranges, region.offset, LogType::FILE);
     }
     ioStats_->read().increment(region.length);
+    // Categorize by size: < 128K, 128K-8M, > 8M
+    constexpr uint64_t k128KB = 128 * 1024;
+    constexpr uint64_t k8MB = 8 * 1024 * 1024;
+    if (region.length < k128KB) {
+      ioStats_->read128k().increment(region.length);
+    } else if (region.length <= k8MB) {
+      ioStats_->read8M().increment(region.length);
+    } else {
+      ioStats_->readLarge().increment(region.length);
+    }
     ioStats_->queryThreadIoLatencyUs().increment(storageReadUs);
     ioStats_->storageReadLatencyUs().increment(storageReadUs);
     ioStats_->incTotalScanTime(storageReadUs * 1'000);

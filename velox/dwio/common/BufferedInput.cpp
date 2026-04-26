@@ -132,6 +132,16 @@ void BufferedInput::readToBuffer(
   }
   if (auto* stats = input_->getStats()) {
     stats->read().increment(allocated.size());
+    // Categorize by size: < 128K, 128K-8M, > 8M
+    constexpr uint64_t k128KB = 128 * 1024;
+    constexpr uint64_t k8MB = 8 * 1024 * 1024;
+    if (allocated.size() < k128KB) {
+      stats->read128k().increment(allocated.size());
+    } else if (allocated.size() <= k8MB) {
+      stats->read8M().increment(allocated.size());
+    } else {
+      stats->readLarge().increment(allocated.size());
+    }
     stats->queryThreadIoLatencyUs().increment(storageReadTimeUs);
     stats->storageReadLatencyUs().increment(storageReadTimeUs);
   }

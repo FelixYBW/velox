@@ -116,6 +116,9 @@ void IoStatistics::merge(const IoStatistics& other) {
   rawOverreadBytes_ += other.rawOverreadBytes_;
   prefetch_.merge(other.prefetch_);
   read_.merge(other.read_);
+  read128k_.merge(other.read128k_);
+  read8M_.merge(other.read8M_);
+  readLarge_.merge(other.readLarge_);
   ramHit_.merge(other.ramHit_);
   ssdRead_.merge(other.ssdRead_);
   queryThreadIoLatencyUs_.merge(other.queryThreadIoLatencyUs_);

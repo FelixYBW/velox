@@ -133,6 +133,18 @@ class IoStatistics {
     return read_;
   }
 
+  IoCounter& read128k() {
+    return read128k_;
+  }
+
+  IoCounter& read8M() {
+    return read8M_;
+  }
+
+  IoCounter& readLarge() {
+    return readLarge_;
+  }
+
   IoCounter& ssdRead() {
     return ssdRead_;
   }
@@ -197,6 +209,15 @@ class IoStatistics {
 
   // Read from storage, for sparsely accessed columns.
   IoCounter read_;
+
+  // Read from storage with size < 128K.
+  IoCounter read128k_;
+
+  // Read from storage with size between 128K and 8M.
+  IoCounter read8M_;
+
+  // Read from storage with size > 8M.
+  IoCounter readLarge_;
 
   // Hits from RAM cache. Does not include first use of prefetched data.
   IoCounter ramHit_;

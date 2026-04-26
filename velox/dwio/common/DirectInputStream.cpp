@@ -153,6 +153,16 @@ void DirectInputStream::loadSync() {
     input_->read(ranges, loadedRegion_.offset, LogType::FILE);
   }
   ioStats_->read().increment(loadedRegion_.length);
+  // Categorize by size: < 128K, 128K-8M, > 8M
+  constexpr uint64_t k128KB = 128 * 1024;
+  constexpr uint64_t k8MB = 8 * 1024 * 1024;
+  if (loadedRegion_.length < k128KB) {
+    ioStats_->read128k().increment(loadedRegion_.length);
+  } else if (loadedRegion_.length <= k8MB) {
+    ioStats_->read8M().increment(loadedRegion_.length);
+  } else {
+    ioStats_->readLarge().increment(loadedRegion_.length);
+  }
   ioStats_->queryThreadIoLatencyUs().increment(usecs);
   ioStats_->storageReadLatencyUs().increment(usecs);
   ioStats_->incTotalScanTime(usecs * 1'000);

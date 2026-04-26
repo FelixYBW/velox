@@ -592,6 +592,36 @@ FileDataSource::getRuntimeStats() {
              saturateCast(ioStatistics_->read().max()),
              RuntimeCounter::Unit::kBytes)});
   }
+  if (ioStatistics_->read128k().count() > 0) {
+    res.insert(
+        {std::string(kStorageReadBytes128k),
+         RuntimeMetric(
+             saturateCast(ioStatistics_->read128k().sum()),
+             ioStatistics_->read128k().count(),
+             saturateCast(ioStatistics_->read128k().min()),
+             saturateCast(ioStatistics_->read128k().max()),
+             RuntimeCounter::Unit::kBytes)});
+  }
+  if (ioStatistics_->read8M().count() > 0) {
+    res.insert(
+        {std::string(kStorageReadBytes8M),
+         RuntimeMetric(
+             saturateCast(ioStatistics_->read8M().sum()),
+             ioStatistics_->read8M().count(),
+             saturateCast(ioStatistics_->read8M().min()),
+             saturateCast(ioStatistics_->read8M().max()),
+             RuntimeCounter::Unit::kBytes)});
+  }
+  if (ioStatistics_->readLarge().count() > 0) {
+    res.insert(
+        {std::string(kStorageReadBytesLarge),
+         RuntimeMetric(
+             saturateCast(ioStatistics_->readLarge().sum()),
+             ioStatistics_->readLarge().count(),
+             saturateCast(ioStatistics_->readLarge().min()),
+             saturateCast(ioStatistics_->readLarge().max()),
+             RuntimeCounter::Unit::kBytes)});
+  }
   if (ioStatistics_->ssdRead().count() > 0) {
     res.insert(
         {std::string(kNumLocalRead),

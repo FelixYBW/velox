@@ -211,6 +211,16 @@ void CachedBufferedInput::preload() {
     input_->read(ranges, 0, LogType::FILE);
   }
   ioStatistics_->read().increment(fileSize_);
+  // Categorize by size: < 128K, 128K-8M, > 8M
+  constexpr uint64_t k128KB = 128 * 1024;
+  constexpr uint64_t k8MB = 8 * 1024 * 1024;
+  if (fileSize_ < k128KB) {
+    ioStatistics_->read128k().increment(fileSize_);
+  } else if (fileSize_ <= k8MB) {
+    ioStatistics_->read8M().increment(fileSize_);
+  } else {
+    ioStatistics_->readLarge().increment(fileSize_);
+  }
   ioStatistics_->incRawBytesRead(fileSize_);
   ioStatistics_->queryThreadIoLatencyUs().increment(storageReadUs);
   ioStatistics_->storageReadLatencyUs().increment(storageReadUs);
@@ -386,6 +396,16 @@ class DwioCoalescedLoadBase : public cache::CoalescedLoad {
       ioStatistics_->ssdRead().increment(stats.payloadBytes);
     } else {
       ioStatistics_->read().increment(stats.payloadBytes);
+      // Categorize by size: < 128K, 128K-8M, > 8M
+      constexpr uint64_t k128KB = 128 * 1024;
+      constexpr uint64_t k8MB = 8 * 1024 * 1024;
+      if (stats.payloadBytes < k128KB) {
+        ioStatistics_->read128k().increment(stats.payloadBytes);
+      } else if (stats.payloadBytes <= k8MB) {
+        ioStatistics_->read8M().increment(stats.payloadBytes);
+      } else {
+        ioStatistics_->readLarge().increment(stats.payloadBytes);
+      }
     }
     if (prefetch) {
       ioStatistics_->prefetch().increment(stats.payloadBytes);

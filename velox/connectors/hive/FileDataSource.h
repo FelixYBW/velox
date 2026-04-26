@@ -48,6 +48,9 @@ class FileDataSource : public DataSource {
   static constexpr std::string_view kTotalScanTime{"totalScanTime"};
   static constexpr std::string_view kOverreadBytes{"overreadBytes"};
   static constexpr std::string_view kStorageReadBytes{"storageReadBytes"};
+  static constexpr std::string_view kStorageReadBytes128k{"storageReadBytes128k"};
+  static constexpr std::string_view kStorageReadBytes8M{"storageReadBytes8M"};
+  static constexpr std::string_view kStorageReadBytesLarge{"storageReadBytesLarge"};
   static constexpr std::string_view kNumLocalRead{"numLocalRead"};
   static constexpr std::string_view kLocalReadBytes{"localReadBytes"};
   static constexpr std::string_view kNumRamRead{"numRamRead"};

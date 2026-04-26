@@ -306,6 +306,16 @@ void DirectBufferedInput::preload() {
     }
   }
   ioStatistics_->read().increment(fileSize_);
+  // Categorize by size: < 128K, 128K-8M, > 8M
+  constexpr uint64_t k128KB = 128 * 1024;
+  constexpr uint64_t k8MB = 8 * 1024 * 1024;
+  if (fileSize_ < k128KB) {
+    ioStatistics_->read128k().increment(fileSize_);
+  } else if (fileSize_ <= k8MB) {
+    ioStatistics_->read8M().increment(fileSize_);
+  } else {
+    ioStatistics_->readLarge().increment(fileSize_);
+  }
   ioStatistics_->incRawBytesRead(fileSize_);
   ioStatistics_->queryThreadIoLatencyUs().increment(storageReadUs);
   ioStatistics_->storageReadLatencyUs().increment(storageReadUs);
@@ -395,7 +405,18 @@ std::vector<cache::CachePin> DirectCoalescedLoad::loadData(bool prefetch) {
     input_->read(buffers, requests_[0].region.offset, LogType::FILE);
   }
 
-  ioStatistics_->read().increment(size + overread);
+  const uint64_t totalRead = size + overread;
+  ioStatistics_->read().increment(totalRead);
+  // Categorize by size: < 128K, 128K-8M, > 8M
+  constexpr uint64_t k128KB = 128 * 1024;
+  constexpr uint64_t k8MB = 8 * 1024 * 1024;
+  if (totalRead < k128KB) {
+    ioStatistics_->read128k().increment(totalRead);
+  } else if (totalRead <= k8MB) {
+    ioStatistics_->read8M().increment(totalRead);
+  } else {
+    ioStatistics_->readLarge().increment(totalRead);
+  }
   ioStatistics_->incRawBytesRead(size);
   ioStatistics_->incTotalScanTime(usecs * 1'000);
   ioStatistics_->queryThreadIoLatencyUs().increment(usecs);
