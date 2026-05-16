@@ -17,7 +17,9 @@
 #include <folly/Benchmark.h>
 #include <folly/init/Init.h>
 #include <gflags/gflags.h>
+#include <algorithm>
 #include <fstream>
+#include <numeric>
 #include <regex>
 #include <thread>
 
@@ -153,17 +155,16 @@ class S3ReadBenchmark {
     }
   }
 
-  // Worker thread function that processes a subset of operations
+  // Worker thread function that processes operations assigned via round-robin
   void workerThread(
       const std::vector<S3ReadOperation>& operations,
-      size_t startIdx,
-      size_t endIdx,
+      const std::vector<size_t>& assignedIndices,
       int threadId) {
-    LOG(INFO) << "Thread " << threadId << " processing operations ["
-              << startIdx << ", " << endIdx << ")";
+    LOG(INFO) << "Thread " << threadId << " processing "
+              << assignedIndices.size() << " operations";
 
-    for (size_t i = startIdx; i < endIdx; ++i) {
-      executeRead(operations[i]);
+    for (size_t idx : assignedIndices) {
+      executeRead(operations[idx]);
     }
 
     LOG(INFO) << "Thread " << threadId << " completed";
@@ -183,27 +184,55 @@ class S3ReadBenchmark {
               << iterations << " iterations, " << operations.size()
               << " operations";
 
+    // Sort operations by file to group requests for the same file together
+    std::vector<size_t> sortedIndices(operations.size());
+    std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
+    std::sort(sortedIndices.begin(), sortedIndices.end(),
+              [&operations](size_t a, size_t b) {
+                return operations[a].file < operations[b].file;
+              });
+    
+    LOG(INFO) << "Sorted operations by file for optimal throughput";
+
     for (int iter = 0; iter < iterations; ++iter) {
       LOG(INFO) << "Iteration " << (iter + 1) << "/" << iterations;
 
       auto startTime = std::chrono::high_resolution_clock::now();
 
-      // Divide operations among threads
-      std::vector<std::thread> threads;
-      size_t opsPerThread = operations.size() / numThreads;
-      size_t remainder = operations.size() % numThreads;
+      // Assign operations to threads using round-robin allocation
+      // Keep consecutive requests for the same file in the same thread
+      std::vector<std::vector<size_t>> threadAssignments(numThreads);
+      int currentThread = 0;
+      
+      for (size_t i = 0; i < sortedIndices.size(); ++i) {
+        size_t currentIdx = sortedIndices[i];
+        
+        // Check if this operation is for the same file as the previous one
+        if (i > 0) {
+          size_t prevIdx = sortedIndices[i - 1];
+          if (operations[currentIdx].file == operations[prevIdx].file) {
+            // Keep in the same thread as previous operation
+            threadAssignments[currentThread].push_back(currentIdx);
+          } else {
+            // Different file - use round-robin
+            currentThread = (currentThread + 1) % numThreads;
+            threadAssignments[currentThread].push_back(currentIdx);
+          }
+        } else {
+          // First operation
+          threadAssignments[currentThread].push_back(currentIdx);
+        }
+      }
 
-      size_t startIdx = 0;
+      // Create threads with their assigned operations
+      std::vector<std::thread> threads;
       for (int i = 0; i < numThreads; ++i) {
-        size_t endIdx = startIdx + opsPerThread + (i < remainder ? 1 : 0);
         threads.emplace_back(
             &S3ReadBenchmark::workerThread,
             this,
             std::cref(operations),
-            startIdx,
-            endIdx,
+            std::cref(threadAssignments[i]),
             i);
-        startIdx = endIdx;
       }
 
       // Wait for all threads to complete
@@ -374,8 +403,15 @@ class S3ReadBenchmark {
           configValues["hive.s3.aws-imds-enabled"] = value;
           LOG(INFO) << "  Loaded aws-imds-enabled: " << value;
         } else if (key == "minPartSize") {
-          configValues["hive.s3.min-part-size"] = value;
-          LOG(INFO) << "  Loaded min-part-size: " << value;
+          // Convert bytes to MB format (e.g., "10485760" -> "10MB")
+          try {
+            size_t bytes = std::stoull(value);
+            size_t mb = bytes / (1024 * 1024);
+            configValues["hive.s3.min-part-size"] = std::to_string(mb) + "MB";
+            LOG(INFO) << "  Loaded min-part-size: " << configValues["hive.s3.min-part-size"] << " (" << value << " bytes)";
+          } catch (const std::exception& e) {
+            LOG(WARNING) << "  Failed to parse minPartSize: " << value;
+          }
         }
       }
     }
