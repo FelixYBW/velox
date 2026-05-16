@@ -19,6 +19,10 @@
 #include "velox/connectors/hive/storage_adapters/s3fs/S3Counters.h"
 #include "velox/connectors/hive/storage_adapters/s3fs/S3Util.h"
 
+#include <fmt/format.h>
+#include <fstream>
+#include <mutex>
+
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
@@ -27,6 +31,33 @@
 namespace facebook::velox::filesystems {
 
 namespace {
+
+std::mutex& s3ReadTraceMutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
+std::string& s3ReadTraceFilePath() {
+  static std::string path = "/tmp/velox_s3_read_trace.log";
+  return path;
+}
+
+bool shouldTraceS3ReadRequest(std::string_view key) {
+  return key.find("_delta_log") == std::string_view::npos;
+}
+
+void appendS3ReadTraceLine(std::string_view key, const std::string& line) {
+  if (!shouldTraceS3ReadRequest(key)) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(s3ReadTraceMutex());
+  std::ofstream traceFile(
+      s3ReadTraceFilePath(), std::ios::out | std::ios::app);
+  if (!traceFile.is_open()) {
+    return;
+  }
+  traceFile << line << '\n';
+}
 
 // By default, the AWS SDK reads object data into an auto-growing StringStream.
 // To avoid copies, read directly into a pre-allocated buffer instead.
@@ -63,6 +94,13 @@ class S3ReadFile ::Impl {
     request.SetBucket(awsString(bucket_));
     request.SetKey(awsString(key_));
 
+    appendS3ReadTraceLine(
+        key_,
+        fmt::format(
+            "HeadObject bucket={} key={} file={}",
+            bucket_,
+            key_,
+            getName()));
     RECORD_METRIC_VALUE(kMetricS3MetadataCalls);
     auto outcome = client_->HeadObject(request);
     if (!outcome.IsSuccess()) {
@@ -152,6 +190,14 @@ class S3ReadFile ::Impl {
     request.SetRange(awsString(ss.str()));
     request.SetResponseStreamFactory(
         AwsWriteableStreamFactory(position, length));
+    appendS3ReadTraceLine(
+        key_,
+        fmt::format(
+            "GetObject bucket={} key={} range={} file={}",
+            bucket_,
+            key_,
+            ss.str(),
+            getName()));
     RECORD_METRIC_VALUE(kMetricS3ActiveConnections);
     RECORD_METRIC_VALUE(kMetricS3GetObjectCalls);
     auto outcome = client_->GetObject(request);

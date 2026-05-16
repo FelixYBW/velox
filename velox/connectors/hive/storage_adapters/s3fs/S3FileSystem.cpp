@@ -27,6 +27,8 @@
 
 #include <fmt/format.h>
 #include <glog/logging.h>
+#include <chrono>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 
@@ -301,6 +303,38 @@ class S3FileSystem::Impl {
 
     auto credentialsProvider = getCredentialsProvider(*s3Config_);
 
+    // Debug dump of s3Config_ to file
+    {
+      std::ofstream dumpFile("/tmp/s3config_dump.txt", std::ios::app);
+      if (dumpFile.is_open()) {
+        auto now = std::chrono::system_clock::now();
+        auto time = std::chrono::system_clock::to_time_t(now);
+        dumpFile << "\n=== S3Config dump at " << std::ctime(&time);
+        dumpFile << "bucket: " << s3Config_->bucket() << "\n";
+        dumpFile << "endpoint: " << (s3Config_->endpoint().has_value() ? s3Config_->endpoint().value() : "not set") << "\n";
+        dumpFile << "endpointRegion: " << (s3Config_->endpointRegion().has_value() ? s3Config_->endpointRegion().value() : "not set") << "\n";
+        dumpFile << "accessKey: " << (s3Config_->accessKey().has_value() ? s3Config_->accessKey().value() : "not set") << "\n";
+        dumpFile << "secretKey: " << (s3Config_->secretKey().has_value() ? "***REDACTED***" : "not set") << "\n";
+        dumpFile << "useVirtualAddressing: " << s3Config_->useVirtualAddressing() << "\n";
+        dumpFile << "useSSL: " << s3Config_->useSSL() << "\n";
+        dumpFile << "useInstanceCredentials: " << s3Config_->useInstanceCredentials() << "\n";
+        dumpFile << "iamRole: " << (s3Config_->iamRole().has_value() ? s3Config_->iamRole().value() : "not set") << "\n";
+        dumpFile << "iamRoleSessionName: " << s3Config_->iamRoleSessionName() << "\n";
+        dumpFile << "connectTimeout: " << (s3Config_->connectTimeout().has_value() ? s3Config_->connectTimeout().value() : "not set") << "\n";
+        dumpFile << "socketTimeout: " << (s3Config_->socketTimeout().has_value() ? s3Config_->socketTimeout().value() : "not set") << "\n";
+        dumpFile << "maxConnections: " << (s3Config_->maxConnections().has_value() ? std::to_string(s3Config_->maxConnections().value()) : "not set") << "\n";
+        dumpFile << "maxAttempts: " << (s3Config_->maxAttempts().has_value() ? std::to_string(s3Config_->maxAttempts().value()) : "not set") << "\n";
+        dumpFile << "retryMode: " << (s3Config_->retryMode().has_value() ? s3Config_->retryMode().value() : "not set") << "\n";
+        dumpFile << "useProxyFromEnv: " << s3Config_->useProxyFromEnv() << "\n";
+        dumpFile << "payloadSigningPolicy: " << s3Config_->payloadSigningPolicy() << "\n";
+        dumpFile << "credentialsProvider: " << (s3Config_->credentialsProvider().has_value() ? s3Config_->credentialsProvider().value() : "not set") << "\n";
+        dumpFile << "useIMDS: " << s3Config_->useIMDS() << "\n";
+        dumpFile << "minPartSize: " << s3Config_->minPartSize() << "\n";
+        dumpFile << "===\n";
+        dumpFile.close();
+      }
+    }
+    
     client_ = std::make_shared<Aws::S3::S3Client>(
         credentialsProvider, nullptr /* endpointProvider */, clientConfig);
     ++fileSystemCount;

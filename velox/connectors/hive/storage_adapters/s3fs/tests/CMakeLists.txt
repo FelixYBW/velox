@@ -98,6 +98,17 @@ target_link_libraries(
   GTest::gtest_main
 )
 
+add_executable(velox_s3read_benchmark S3ReadBenchmark.cpp)
+target_link_libraries(
+  velox_s3read_benchmark
+  velox_file
+  velox_s3fs
+  velox_core
+  velox_exec_test_lib
+  Folly::folly
+  gflags::gflags
+)
+
 add_executable(velox_s3metrics_test S3FileSystemMetricsTest.cpp)
 add_test(velox_s3metrics_test velox_s3metrics_test)
 target_link_libraries(
