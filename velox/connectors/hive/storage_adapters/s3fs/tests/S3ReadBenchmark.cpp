@@ -39,6 +39,14 @@ DEFINE_bool(
     verbose,
     false,
     "Enable verbose output showing each read operation");
+DEFINE_bool(
+    sort_by_file,
+    true,
+    "Sort operations by file before execution for optimal throughput");
+DEFINE_bool(
+    group_same_file,
+    true,
+    "Keep consecutive requests for the same file in the same thread");
 
 namespace facebook::velox::filesystems {
 
@@ -82,11 +90,10 @@ class S3ReadBenchmark {
   }
 
   // Parse trace log line to extract S3 read operation details
-  // Format: GetObject bucket=<bucket> key=<key> range=bytes=<start>-<end>
-  // file=s3://<bucket>/<key>
+  // Format: GetObject timestamp=<timestamp> bucket=<bucket> key=<key> range=bytes=<start>-<end>
   std::optional<S3ReadOperation> parseTraceLogLine(const std::string& line) {
     static const std::regex pattern(
-        R"(GetObject\s+bucket=([^\s]+)\s+key=([^\s]+)\s+range=bytes=(\d+)-(\d+)\s+file=(s3://[^\s]+))");
+        R"(GetObject\s+timestamp=\d+\s+bucket=([^\s]+)\s+key=([^\s]+)\s+range=bytes=(\d+)-(\d+))");
 
     std::smatch matches;
     if (std::regex_search(line, matches, pattern)) {
@@ -95,7 +102,8 @@ class S3ReadBenchmark {
       op.key = matches[2].str();
       op.rangeStart = std::stoll(matches[3].str());
       op.rangeEnd = std::stoll(matches[4].str());
-      op.file = matches[5].str();
+      // Construct the S3 file path from bucket and key
+      op.file = fmt::format("s3://{}/{}", op.bucket, op.key);
       return op;
     }
     return std::nullopt;
@@ -183,44 +191,58 @@ class S3ReadBenchmark {
     LOG(INFO) << "Starting benchmark with " << numThreads << " threads, "
               << iterations << " iterations, " << operations.size()
               << " operations";
+    LOG(INFO) << "Configuration: sort_by_file=" << FLAGS_sort_by_file
+              << ", group_same_file=" << FLAGS_group_same_file;
 
-    // Sort operations by file to group requests for the same file together
+    // Optionally sort operations by file to group requests for the same file together
     std::vector<size_t> sortedIndices(operations.size());
     std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
-    std::sort(sortedIndices.begin(), sortedIndices.end(),
-              [&operations](size_t a, size_t b) {
-                return operations[a].file < operations[b].file;
-              });
     
-    LOG(INFO) << "Sorted operations by file for optimal throughput";
+    if (FLAGS_sort_by_file) {
+      std::sort(sortedIndices.begin(), sortedIndices.end(),
+                [&operations](size_t a, size_t b) {
+                  return operations[a].file < operations[b].file;
+                });
+      LOG(INFO) << "Sorted operations by file for optimal throughput";
+    } else {
+      LOG(INFO) << "Using original operation order (no sorting)";
+    }
 
     for (int iter = 0; iter < iterations; ++iter) {
       LOG(INFO) << "Iteration " << (iter + 1) << "/" << iterations;
 
       auto startTime = std::chrono::high_resolution_clock::now();
 
-      // Assign operations to threads using round-robin allocation
-      // Keep consecutive requests for the same file in the same thread
+      // Assign operations to threads
       std::vector<std::vector<size_t>> threadAssignments(numThreads);
       int currentThread = 0;
       
-      for (size_t i = 0; i < sortedIndices.size(); ++i) {
-        size_t currentIdx = sortedIndices[i];
-        
-        // Check if this operation is for the same file as the previous one
-        if (i > 0) {
-          size_t prevIdx = sortedIndices[i - 1];
-          if (operations[currentIdx].file == operations[prevIdx].file) {
-            // Keep in the same thread as previous operation
-            threadAssignments[currentThread].push_back(currentIdx);
+      if (FLAGS_group_same_file) {
+        // Keep consecutive requests for the same file in the same thread
+        for (size_t i = 0; i < sortedIndices.size(); ++i) {
+          size_t currentIdx = sortedIndices[i];
+          
+          // Check if this operation is for the same file as the previous one
+          if (i > 0) {
+            size_t prevIdx = sortedIndices[i - 1];
+            if (operations[currentIdx].file == operations[prevIdx].file) {
+              // Keep in the same thread as previous operation
+              threadAssignments[currentThread].push_back(currentIdx);
+            } else {
+              // Different file - use round-robin
+              currentThread = (currentThread + 1) % numThreads;
+              threadAssignments[currentThread].push_back(currentIdx);
+            }
           } else {
-            // Different file - use round-robin
-            currentThread = (currentThread + 1) % numThreads;
+            // First operation
             threadAssignments[currentThread].push_back(currentIdx);
           }
-        } else {
-          // First operation
-          threadAssignments[currentThread].push_back(currentIdx);
+        }
+      } else {
+        // Simple round-robin allocation without grouping by file
+        for (size_t i = 0; i < sortedIndices.size(); ++i) {
+          threadAssignments[currentThread].push_back(sortedIndices[i]);
+          currentThread = (currentThread + 1) % numThreads;
         }
       }
 
@@ -440,17 +462,15 @@ int main(int argc, char** argv) {
     LOG(ERROR) << "Please provide --trace_log_file parameter";
     LOG(INFO) << "Usage: " << argv[0]
               << " --trace_log_file=<path> [--num_threads=4] "
-                 "[--iterations=1] [--verbose=false]";
+                 "[--iterations=1] [--verbose=false] "
+                 "[--sort_by_file=true] [--group_same_file=true]";
     LOG(INFO) << "\nExample trace log format:";
-    LOG(INFO) << "GetObject bucket=adobe-workload-east-1 "
+    LOG(INFO) << "GetObject timestamp=1778968760063 "
+                 "bucket=adobe-workload-east-1 "
                  "key=xdm/62b89f2ae63a221b63b2f6c1/_ACP_DATE=2020-01-29/"
                  "_ACP_BATCHID=01G6GN2E24FARAA1A456Y3W75D/"
                  "part-01022-17ef7759-0c4e-409a-a9ee-28ff48397539.c000.snappy."
-                 "parquet range=bytes=86250071-86377805 "
-                 "file=s3://adobe-workload-east-1/xdm/62b89f2ae63a221b63b2f6c1/"
-                 "_ACP_DATE=2020-01-29/_ACP_BATCHID=01G6GN2E24FARAA1A456Y3W75D/"
-                 "part-01022-17ef7759-0c4e-409a-a9ee-28ff48397539.c000.snappy."
-                 "parquet";
+                 "parquet range=bytes=86250071-86377805";
     return 1;
   }
 
