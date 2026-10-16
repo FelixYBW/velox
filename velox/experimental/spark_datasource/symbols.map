@@ -1,0 +1,8 @@
+{
+  global:
+    Java_org_apache_spark_sql_datasource_NativeBridge_*;
+  local:
+    # Hide Velox, folly and the other static dependencies, so that they don't clash with another
+    # copy in the same JVM, such as Gluten's libvelox.so.
+    *;
+};

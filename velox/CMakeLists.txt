@@ -91,6 +91,10 @@ if(VELOX_ENABLE_CXL)
   add_subdirectory(experimental/cxl)
 endif()
 
+if(VELOX_BUILD_SPARK_DATASOURCE AND VELOX_ENABLE_PARQUET)
+  add_subdirectory(experimental/spark_datasource)
+endif()
+
 if(${VELOX_BUILD_TESTING})
   add_subdirectory(tool)
 endif()
